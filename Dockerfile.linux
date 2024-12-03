@@ -1,0 +1,8 @@
+FROM rust:latest 
+ 
+RUN apt update && apt upgrade -y 
+RUN apt install -y g++-mingw-w64-x86-64 
+ 
+WORKDIR /app 
+ 
+CMD ["cargo", "build", "--release"]
