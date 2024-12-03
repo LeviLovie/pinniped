@@ -1,0 +1,20 @@
+("Addition: ") .
+(2) (3) + . nl
+
+("Subtraction: ") .
+(7) (4) - . nl
+
+("Multiplication: ") .
+(2) (3) * . nl
+
+("Division: ") .
+(6) (3) / . nl
+
+("Modulo: ") .
+(3) (2) % . nl
+
+("Exponentiation: ") .
+(2) (10) ^ . nl
+
+("Negation: ") .
+(2) ~ . nl

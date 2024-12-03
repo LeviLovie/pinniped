@@ -1,0 +1,22 @@
+("Swap: ") . nl
+(2) (3) . . nl
+(2) (3) swp . . nl nl
+
+("Rotate left: ") . nl
+(1) (2) (3) . . . nl
+(1) (2) (3) rol . . . nl nl
+
+("Rotate right: ") . nl
+(1) (2) (3) . . . nl
+(1) (2) (3) ror . . . nl nl
+
+("Clear:") . nl
+(1) (2) (3) . . . nl
+(1) (2) (3) clr nl nl
+
+("Duplicate: ") . nl
+(1) (2) . . nl
+(1) (2) : . . . nl nl
+
+("Debug: ") . nl
+(1) (2) ` nl

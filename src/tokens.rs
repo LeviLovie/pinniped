@@ -197,24 +197,10 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-        // Swap the top three values from the stack
-        TokenType::reg(
-            TokenKind::Function,
-            "rot",
-            |stack: &mut Stack, _, _| -> Result<()> {
-                let a = stack.pop()?;
-                let b = stack.pop()?;
-                let c = stack.pop()?;
-                stack.push(c);
-                stack.push(b);
-                stack.push(a);
-                Ok(())
-            },
-        ),
         // Rotate the top three values from the stack to the left
         TokenType::reg(
             TokenKind::Function,
-            "rol",
+            "ror",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
@@ -228,7 +214,7 @@ pub fn tokens() -> Vec<TokenType> {
         // Rotate the top three values from the stack to the right
         TokenType::reg(
             TokenKind::Function,
-            "ror",
+            "rol",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;

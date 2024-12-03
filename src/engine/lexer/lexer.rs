@@ -66,8 +66,12 @@ impl Lexer {
                 word.push(c);
             }
         }
+        if word.is_empty() {
+            self.contents = self.contents[remove_symbols..].to_string();
+            return Ok(());
+        }
         self.contents = self.contents[remove_symbols..].to_string();
-        info!("Word: {}", word);
+        info!("Word: `{}`", word);
         let mut found = false;
 
         for (i, token) in self.token_types.iter().enumerate() {
