@@ -2,11 +2,13 @@ use anyhow::{Context, Result};
 use log::info;
 use regex::Regex;
 
-use super::token::{Token, TokenType, TokenKind};
 use super::super::data::Data;
+use super::token::{Token, TokenKind, TokenType};
 
 struct Lexer {
     contents: String,
+    raw_contents: String,
+    file: String,
     line: usize,
     col: usize,
     tokens: Vec<Token>,
@@ -14,14 +16,17 @@ struct Lexer {
 }
 
 impl Lexer {
-    fn new(contents: &str, token_types: Vec<TokenType>) -> Self {
+    fn new(contents: &str, token_types: Vec<TokenType>, file: String) -> Self {
         let mut contents = contents.to_string();
         if contents.ends_with('\n') {
             contents.pop();
         }
+        contents.push(' ');
 
         Self {
-            contents,
+            contents: contents.clone(),
+            raw_contents: contents.clone(),
+            file,
             line: 1,
             col: 1,
             tokens: Vec::new(),
@@ -30,30 +35,39 @@ impl Lexer {
     }
 
     fn lex(&mut self) -> Result<()> {
-        // Find the next word (separated by whitespace, \t, \n, or \r) and try to regex it. Workd
+        // Find the next word (separated by whitespace, \t, \n, or \r) and try to regex it. Word
         // should not be empty or contain only whitespace.
         let mut remove_symbols = 0;
         let mut word = String::new();
         let mut word_start_col = self.col;
         let word_start_line = self.line;
+        let mut inside_quotes = false;
         for c in self.contents[0..].chars() {
             remove_symbols += 1;
             self.col += 1;
-            if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
-                word_start_col += 1;
-                if c == '\n' {
-                    self.line += 1;
-                    self.col = 1;
-                    word_start_col = 1;
-                }
-                if word.is_empty() {
-                    continue;
-                }
-                break;
+            if c == '"' {
+                inside_quotes = !inside_quotes;
+                continue;
             }
-            word.push(c);
+
+            if inside_quotes {
+                word.push(c);
+                continue;
+            } else {
+                if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
+                    word_start_col += 1;
+                    if c == '\n' {
+                        self.line += 1;
+                        self.col = 1;
+                        word_start_col = 1;
+                    }
+                    break;
+                }
+                word.push(c);
+            }
         }
         self.contents = self.contents[remove_symbols..].to_string();
+        info!("Word: {}", word);
         let mut found = false;
 
         for (i, token) in self.token_types.iter().enumerate() {
@@ -65,7 +79,19 @@ impl Lexer {
                     let caps = re.captures(&word).unwrap();
                     data = Data::from_any(&caps[1]);
                 }
-                self.tokens.push(Token::new(i, data, word_start_line, word_start_col));
+                let line = self
+                    .raw_contents
+                    .lines()
+                    .nth(word_start_line - 1)
+                    .unwrap_or("");
+                self.tokens.push(Token::new(
+                    i,
+                    data,
+                    self.file.clone(),
+                    word_start_line,
+                    word_start_col,
+                    line.to_string(),
+                ));
                 found = true;
                 break;
             }
@@ -87,8 +113,8 @@ impl Lexer {
     }
 }
 
-pub fn lex(contents: &str, token_types: Vec<TokenType>) -> Result<Vec<Token>> {
-    let mut lexer = Lexer::new(contents, token_types);
+pub fn lex(contents: &str, token_types: Vec<TokenType>, file: String) -> Result<Vec<Token>> {
+    let mut lexer = Lexer::new(contents, token_types, file);
     info!("Lexer created");
 
     while !lexer.contents.is_empty() {

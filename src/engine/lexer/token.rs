@@ -1,4 +1,4 @@
-use super::super::{stack::Stack, data::Data};
+use super::super::{data::Data, stack::Stack};
 
 use anyhow::Result;
 
@@ -36,17 +36,28 @@ impl TokenType {
 pub struct Token {
     pub type_: usize,
     pub data: Data,
+    pub file: String,
     pub line: usize,
     pub col: usize,
+    pub vis: String,
 }
 
 impl Token {
-    pub fn new(type_: usize, data: Data, line: usize, col: usize) -> Self {
+    pub fn new(
+        type_: usize,
+        data: Data,
+        file: String,
+        line: usize,
+        col: usize,
+        vis: String,
+    ) -> Self {
         Self {
             type_,
             data,
+            file,
             line,
             col,
+            vis,
         }
     }
 

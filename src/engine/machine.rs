@@ -1,9 +1,13 @@
 use anyhow::Result;
+use colored::Colorize;
 use log::info;
 
-use super::file::File;
-use super::lexer::{lexer::lex, token::{Token, TokenType}};
 use super::data::Data;
+use super::file::File;
+use super::lexer::{
+    lexer::lex,
+    token::{Token, TokenType},
+};
 use super::stack::*;
 use crate::args::Args;
 
@@ -50,7 +54,11 @@ impl Machine {
     pub fn lex(&mut self) -> Result<()> {
         info!("Lexing main file");
         let main_file = self.main_file.as_ref().unwrap();
-        let mut tokens = lex(main_file.contents.as_str(), self.token_types.clone())?;
+        let mut tokens = lex(
+            main_file.contents.as_str(),
+            self.token_types.clone(),
+            main_file.path.clone(),
+        )?;
         self.tokens.append(&mut tokens);
 
         Ok(())
@@ -74,7 +82,18 @@ impl Machine {
         let token = &self.tokens[self.pc];
 
         info!("Interpreting token: {:?}", token);
-        token.exec(&self.token_types, &mut self.stack, &mut self.pc)?;
+        match token.exec(&self.token_types, &mut self.stack, &mut self.pc) {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(anyhow::anyhow!(
+                    "Error interpreting token at {}:{}:{}: {}",
+                    token.file.to_string().blue().bold(),
+                    token.line.to_string().bright_black().bold(),
+                    token.col.to_string().bright_black().bold(),
+                    e.to_string().red().bold()
+                ));
+            }
+        };
 
         Ok(())
     }

@@ -1,7 +1,7 @@
 use anyhow::Result;
 
-use super::engine::lexer::token::{TokenType, TokenKind};
 use super::engine::data::Data;
+use super::engine::lexer::token::{TokenKind, TokenType};
 use super::engine::stack::Stack;
 
 pub fn tokens() -> Vec<TokenType> {
@@ -9,13 +9,12 @@ pub fn tokens() -> Vec<TokenType> {
         // Push a value to the stack
         TokenType::reg(
             TokenKind::Push,
-            "\\((\\S+)\\)", // Captures anything exept whitespace inside ()
+            "\\((.+)\\)", // Captures anything exept whitespace inside ()
             |stack: &mut Stack, _, add_value| -> Result<()> {
                 stack.push(add_value);
                 Ok(())
             },
         ),
-
         // Pop and print the top value from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -25,17 +24,11 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Print \n
-        TokenType::reg(
-            TokenKind::Function,
-            "nl",
-            |_, _, _| -> Result<()> {
-                println!();
-                Ok(())
-            },
-        ),
-
+        TokenType::reg(TokenKind::Function, "nl", |_, _, _| -> Result<()> {
+            println!();
+            Ok(())
+        }),
         // Add the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -57,7 +50,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Subtract the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -79,7 +71,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Multiply the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -101,7 +92,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Divide the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -123,7 +113,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Modulo the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -145,7 +134,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Exponentiate the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -167,7 +155,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Negate the top value from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -187,7 +174,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Duplicate the top value from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -199,7 +185,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Swap the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -212,7 +197,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Swap the top three values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -227,7 +211,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Rotate the top three values from the stack to the left
         TokenType::reg(
             TokenKind::Function,
@@ -242,7 +225,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Rotate the top three values from the stack to the right
         TokenType::reg(
             TokenKind::Function,
@@ -257,7 +239,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Clear the stack
         TokenType::reg(
             TokenKind::Function,
@@ -267,7 +248,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Duplicate the top value from the stack n times
         TokenType::reg(
             TokenKind::Function,
@@ -282,7 +262,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-
         // Debug the stack
         TokenType::reg(
             TokenKind::Var,

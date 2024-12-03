@@ -9,7 +9,12 @@ pub struct Stack {
 
 impl std::fmt::Display for Stack {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let result = self.stack.iter().map(|d| format!("{}", d)).collect::<Vec<String>>().join(", ");
+        let result = self
+            .stack
+            .iter()
+            .map(|d| format!("{}", d))
+            .collect::<Vec<String>>()
+            .join(", ");
         write!(f, "{}", result)
     }
 }
@@ -111,10 +116,7 @@ mod stack {
         stack.push(super::Data::Float(42.0));
         stack.push(super::Data::String("42".to_string()));
 
-        assert_eq!(
-            stack.pop().unwrap(),
-            super::Data::String("42".to_string())
-        );
+        assert_eq!(stack.pop().unwrap(), super::Data::String("42".to_string()));
         assert_eq!(stack.pop().unwrap(), super::Data::Float(42.0));
         assert_eq!(stack.pop().unwrap(), super::Data::Int(42));
         assert!(stack.pop().is_err());
