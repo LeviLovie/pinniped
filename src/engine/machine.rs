@@ -15,6 +15,7 @@ use crate::args::Args;
 pub struct Machine {
     args: Args,
     stack: Stack,
+    return_stack: Stack,
     token_types: Vec<TokenType>,
     main_file: Option<File>,
     tokens: Vec<Token>,
@@ -27,6 +28,7 @@ impl Machine {
         Self {
             args,
             stack: Stack::new(),
+            return_stack: Stack::new(),
             token_types: Vec::new(),
             main_file: None,
             tokens: Vec::new(),
@@ -168,6 +170,37 @@ impl Machine {
                     ));
                 }
                 token.data = Data::from_int(while_token.unwrap() as i32)
+            } else if token_type == TokenKind::Proc {
+                // Go through all the tokens and find the matching ret token
+                let mut ret_token = None;
+                let mut depth = 0;
+                let tokens = tokens.clone()[i + 1..].to_vec();
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
+                    if token_type.type_ == TokenKind::ProcRet {
+                        if depth == 0 {
+                            ret_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
+                        }
+                    } else if token_type.type_ == TokenKind::Proc {
+                        depth += 1;
+                    }
+                }
+                if ret_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching ret token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
+                }
+                token.data = Data::from_int(ret_token.unwrap() as i32);
             }
         }
 
@@ -253,6 +286,7 @@ impl Machine {
         match token.exec(
             &self.token_types,
             &mut self.stack,
+            &mut self.return_stack,
             &mut self.marks,
             &mut self.pc,
         ) {

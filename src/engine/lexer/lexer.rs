@@ -79,7 +79,7 @@ impl Lexer {
             if re.is_match(&word) {
                 debug!("Found token: {:?}", token);
                 let mut data = Data::None;
-                if token.type_ == TokenKind::Push {
+                if token.type_ == TokenKind::Push || token.name == "call" {
                     let caps = re.captures(&word).unwrap();
                     data = Data::from_any(&caps[1]);
                 }

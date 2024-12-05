@@ -1,0 +1,7 @@
+(print) proc
+  : . nl
+ret
+
+(0) while : (10) > do (1) +
+  {print}
+end

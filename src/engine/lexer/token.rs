@@ -2,12 +2,14 @@ use super::super::{data::Data, mark::MarkList, stack::Stack};
 
 use anyhow::Result;
 
-type TokenFunc = fn(&mut Stack, &mut MarkList, &mut usize, Data) -> Result<()>;
+type TokenFunc = fn(&mut Stack, &mut Stack, &mut MarkList, &mut usize, Data) -> Result<()>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     Function,
     Push,
+    Proc,
+    ProcRet,
     If,
     EndIf,
     While,
@@ -75,6 +77,7 @@ impl Token {
         &self,
         types: &Vec<TokenType>,
         stack: &mut Stack,
+        return_stack: &mut Stack,
         marks: &mut MarkList,
         pc: &mut usize,
     ) -> Result<()> {
@@ -82,6 +85,6 @@ impl Token {
             return Err(anyhow::anyhow!("Token type out of bounds: {}", self.type_));
         }
 
-        (types[self.type_].func)(stack, marks, pc, self.data.clone())
+        (types[self.type_].func)(stack, return_stack, marks, pc, self.data.clone())
     }
 }

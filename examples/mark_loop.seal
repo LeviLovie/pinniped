@@ -1,3 +1,0 @@
-("start") mark
-  ("Jumping to `start` mark") . nl
-("start") jmp
