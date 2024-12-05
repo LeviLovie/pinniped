@@ -491,7 +491,12 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Proc,
             "proc",
             "proc",
-            |stack: &mut Stack, _, marks: &mut MarkList, pc: &mut usize, data: Data| -> Result<()> {
+            |stack: &mut Stack,
+             _,
+             marks: &mut MarkList,
+             pc: &mut usize,
+             data: Data|
+             -> Result<()> {
                 let location = stack.pop()?;
                 marks.push(location.as_string()?.to_string(), *pc);
                 if !data.is_number() {
@@ -509,7 +514,12 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "call",
             "\\{(.+)\\}",
-            |_, return_stack: &mut Stack, marks: &mut MarkList, pc: &mut usize, data: Data| -> Result<()> {
+            |_,
+             return_stack: &mut Stack,
+             marks: &mut MarkList,
+             pc: &mut usize,
+             data: Data|
+             -> Result<()> {
                 return_stack.push(Data::from_int(*pc as i32));
                 let location = match marks.get_pc(&data.as_string()?) {
                     Some(a) => a,
