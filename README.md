@@ -4,6 +4,13 @@
 Stack based programming language
 
 ## Running
+### Homebrew
+On MacOS, you can install pinniped using [homebrew](https://brew.sh/):
+```sh
+brew tap LeviLovie/homebrew-formulas
+brew install pinniped
+```
+
 ### Provided binaries
 I build the project for Windows, MacOS, and Linux every time a new version comes out. You can download the lates binaries from the [releases](https://github.com/LeviLovie/pinniped/releases/latest).
 
