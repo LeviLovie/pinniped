@@ -3,6 +3,7 @@ use anyhow::Result;
 use super::engine::data::Data;
 use super::engine::lexer::token::{TokenKind, TokenType};
 use super::engine::stack::Stack;
+use super::engine::mark::MarkList;
 
 pub fn tokens() -> Vec<TokenType> {
     vec![
@@ -11,7 +12,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Push,
             "push",
             "\\((.+)\\)", // Captures anything exept whitespace inside ()
-            |stack: &mut Stack, _, add_value| -> Result<()> {
+            |stack: &mut Stack, _, _, add_value| -> Result<()> {
                 stack.push(add_value);
                 Ok(())
             },
@@ -21,13 +22,13 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "pop",
             "\\.",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 print!("{}", stack.pop()?);
                 Ok(())
             },
         ),
         // Print \n
-        TokenType::reg(TokenKind::Function, "nl", "nl", |_, _, _| -> Result<()> {
+        TokenType::reg(TokenKind::Function, "nl", "nl", |_, _, _, _| -> Result<()> {
             println!();
             Ok(())
         }),
@@ -36,7 +37,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "+",
             "\\+",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 if a.is_number() && b.is_number() {
@@ -58,7 +59,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "-",
             "-",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 if a.is_number() && b.is_number() {
@@ -80,7 +81,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "*",
             "\\*",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 if a.is_number() && b.is_number() {
@@ -102,7 +103,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "/",
             "/",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 if a.is_number() && b.is_number() {
@@ -124,7 +125,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "%",
             "%",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 if a.is_number() && b.is_number() {
@@ -146,7 +147,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "^",
             "\\^",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 if a.is_number() && b.is_number() {
@@ -168,7 +169,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "~",
             "~",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 if a.is_number() {
                     if a.is_int() {
@@ -188,7 +189,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             ":",
             ":",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 stack.push(a.clone());
                 stack.push(a);
@@ -200,7 +201,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "swp",
             "swp",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 stack.push(a);
@@ -213,7 +214,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "ror",
             "ror",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 let c = stack.pop()?;
@@ -228,7 +229,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "rol",
             "rol",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 let c = stack.pop()?;
@@ -243,7 +244,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "clr",
             "clr",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 stack.clear();
                 Ok(())
             },
@@ -253,7 +254,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "`",
             "`",
-            |stack: &mut Stack, _, _| -> Result<()> {
+            |stack: &mut Stack, _, _, _| -> Result<()> {
                 println!("Stack debug:\n{}", stack);
                 Ok(())
             },
@@ -263,14 +264,14 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Statement,
             "if",
             "if",
-            |stack: &mut Stack, pc_counter: &mut usize, data: Data| -> Result<()> {
+            |stack: &mut Stack, _, pc: &mut usize, data: Data| -> Result<()> {
                 let last_element = stack.pop()?;
                 if last_element.is_false() {
                     if !data.is_number() {
                         stack.push(last_element);
                         return Err(anyhow::anyhow!("If statement requires a number as the offset. Were tokens linked?"));
                     }
-                    *pc_counter += data.as_int()? as usize - 1;
+                    *pc += data.as_int()? as usize - 1;
                 }
                 Ok(())
             },
@@ -280,7 +281,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Statement,
             "end",
             "end",
-            |_, _, _| -> Result<()> {
+            |_, _, _, _| -> Result<()> {
                 Ok(())
             },
         ),
@@ -289,23 +290,50 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "here",
             "here",
-            |stack: &mut Stack, pc_counter: &mut usize, _| -> Result<()> {
-                stack.push(Data::from_int(*pc_counter as i32));
+            |stack: &mut Stack, _, pc: &mut usize, _| -> Result<()> {
+                stack.push(Data::from_int(*pc as i32));
                 Ok(())
             },
         ),
         // Jump to the top value of the stack
         TokenType::reg(
             TokenKind::Function,
-            "jmp",
-            "jmp",
-            |stack: &mut Stack, pc_counter: &mut usize, _| -> Result<()> {
+            "pcjmp",
+            "pcjmp",
+            |stack: &mut Stack, _, pc: &mut usize, _| -> Result<()> {
                 let a = stack.pop()?;
                 if !a.is_number() {
                     stack.push(a);
                     return Err(anyhow::anyhow!("Jump requires a number as the offset"));
                 }
-                *pc_counter = a.as_int()? as usize;
+                *pc = a.as_int()? as usize;
+                Ok(())
+            },
+        ),
+        // Register a value from the stack to a mark
+        TokenType::reg(
+            TokenKind::Function,
+            "mark",
+            "mark",
+            |stack: &mut Stack, marks: &mut MarkList, _, _| -> Result<()> {
+                let location = stack.pop()?;
+                marks.push(location.as_string()?.to_string(), stack.len());
+                Ok(())
+            },
+        ),
+        // Jump to a mark
+        TokenType::reg(
+            TokenKind::Function,
+            "jmp",
+            "jmp",
+            |stack: &mut Stack, marks: &mut MarkList, pc: &mut usize, _| -> Result<()> {
+                let location = stack.pop()?;
+                if let Some(new_pc) = marks.get_pc(&location.as_string()?) {
+                    *pc = new_pc + 1;
+                } else {
+                    stack.push(Data::String(location.as_string()?.to_string()));
+                    return Err(anyhow::anyhow!("Mark not found"));
+                }
                 Ok(())
             },
         ),

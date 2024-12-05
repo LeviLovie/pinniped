@@ -9,6 +9,7 @@ use super::lexer::{
     token::{Token, TokenType, TokenKind},
 };
 use super::stack::*;
+use super::mark::*;
 use crate::args::Args;
 
 pub struct Machine {
@@ -17,6 +18,7 @@ pub struct Machine {
     token_types: Vec<TokenType>,
     main_file: Option<File>,
     tokens: Vec<Token>,
+    marks: MarkList,
     pc: usize,
 }
 
@@ -28,6 +30,7 @@ impl Machine {
             token_types: Vec::new(),
             main_file: None,
             tokens: Vec::new(),
+            marks: MarkList::new(),
             pc: 0,
         }
     }
@@ -120,15 +123,16 @@ impl Machine {
         let token = &self.tokens[self.pc];
 
         debug!("Interpreting token: {:?}", token);
-        match token.exec(&self.token_types, &mut self.stack, &mut self.pc) {
+        match token.exec(&self.token_types, &mut self.stack, &mut self.marks, &mut self.pc) {
             Ok(_) => {}
             Err(e) => {
                 return Err(anyhow::anyhow!(
-                    "Error interpreting token at {}:{}:{}: {}",
+                    "Error interpreting token at {}:{}:{}: {}:\n{}",
                     token.file.to_string().blue().bold(),
                     token.line.to_string().bright_black().bold(),
                     token.col.to_string().bright_black().bold(),
-                    e.to_string().red().bold()
+                    e.to_string().red().bold(),
+                    token.vis
                 ));
             }
         };
