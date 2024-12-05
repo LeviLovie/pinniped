@@ -74,27 +74,35 @@ impl Machine {
         info!("Starting after-lexing");
 
         let tokens = self.tokens.clone();
-        for token in &mut self.tokens {
+        for (i, token) in &mut self.tokens.iter_mut().enumerate() {
             let token_type = token.get_type(self.token_types.clone())?.type_;
-            if token_type == TokenKind::Statement {
+            if token_type == TokenKind::Statement && token.data != Data::from_str("end") {
+                debug!("Token: {:?}", token);
                 // Go through all the tokens and find the matching end token
                 let mut end_token = None;
                 let mut depth = 0;
+                let tokens = tokens.clone()[i..].to_vec();
                 for (i, t) in tokens.iter().enumerate() {
                     let token_type = t.get_type(self.token_types.clone())?;
                     if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
-                        if t.data == token.data {
+                        if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
                             if depth == 0 {
                                 end_token = Some(i);
-                                debug!("Found end token for token at {}:{}", token.line, token.col);
                                 break;
                             } else {
                                 depth -= 1;
                             }
-                        } else if token_type.type_ == TokenKind::Statement {
+                        } else if token_type.type_ == TokenKind::Statement && token_type.name != "end" {
                             depth += 1;
                         }
                     }
+                }
+                if end_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching end token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
                 }
                 token.data = Data::from_int(end_token.unwrap() as i32);
             }
@@ -107,7 +115,41 @@ impl Machine {
     pub fn interpret(&mut self) -> Result<()> {
         info!("Interpreting tokens");
 
+        if self.args.debug_inter {
+            println!("Press enter to go to the next token");
+        }
+
         while self.pc < self.tokens.len() {
+            if self.args.debug_inter {
+                let token = &self.tokens[self.pc];
+                let token_type = token.get_type(self.token_types.clone())?;
+                let data = token.data.to_string();
+                let quote = "\"".bright_black();
+                let colon = ":".bright_black();
+                let coma = ",".bright_black();
+                println!("\n{}{} {}{}{}", "Line".blue().bold(), colon, quote, token.vis, quote);
+                print!("{}{} ", "Stack".blue().bold(), colon);
+                if self.stack.len() == 0 {
+                    println!("{}", "<empty>".bright_black());
+                }
+                for (i, element) in self.stack.elements().iter().enumerate() {
+                    if i % 5 == 0 && i != 0 {
+                        print!("       ");
+                    }
+                    print!("{}{}{}", quote, element.to_string(), quote);
+                    if i % 5 == 4 || i == self.stack.len() - 1 {
+                        println!();
+                    } else {
+                        print!(", ");
+                    }
+                }
+                // println!("PC: {:<5}; Token: \"{}\"; Data: \"{}\"", self.pc, token_type.name, data);
+                print!("{}{} {}{} ", "PC".blue().bold(), colon, self.pc, coma);
+                print!("{}{} {}{}{}{} ", "Token".blue().bold(), colon, quote, token_type.name, quote, coma);
+                println!("{}{} {}{}{}", "Data".blue().bold(), colon, quote, data, quote);
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input)?;
+            }
             self.interpret_step()?;
             self.pc += 1;
         }
@@ -132,12 +174,12 @@ impl Machine {
             Ok(_) => {}
             Err(e) => {
                 return Err(anyhow::anyhow!(
-                    "Error interpreting token at {}:{}:{}: {}:\n{}",
+                    "Error interpreting token at {}:{}:{}: {}: \"{}\"",
                     token.file.to_string().blue().bold(),
                     token.line.to_string().bright_black().bold(),
                     token.col.to_string().bright_black().bold(),
                     e.to_string().red().bold(),
-                    token.vis
+                    token.get_type(self.token_types.clone())?.name
                 ));
             }
         };

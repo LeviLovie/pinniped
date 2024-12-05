@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use log::{debug, info};
 use regex::Regex;
 
@@ -103,14 +103,11 @@ impl Lexer {
 
         if !found {
             return Err(anyhow::anyhow!(
-                "No token found at line {}, col {}",
+                "No token found at line {}, col {}: \"{}\"",
                 self.line,
-                self.col
+                self.col,
+                word
             ))
-            .context(format!(
-                "No token found at line {}, col {}",
-                self.line, self.col
-            ));
         }
 
         Ok(())

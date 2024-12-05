@@ -20,10 +20,26 @@ pub fn tokens() -> Vec<TokenType> {
         // Pop and print the top value from the stack
         TokenType::reg(
             TokenKind::Function,
-            "pop",
+            ".",
             "\\.",
             |stack: &mut Stack, _, _, _| -> Result<()> {
                 print!("{}", stack.pop()?);
+                Ok(())
+            },
+        ),
+        // Print the top value from the stack
+        TokenType::reg(
+            TokenKind::Function,
+            ",",
+            ",",
+            |stack: &mut Stack, _, _, _| -> Result<()> {
+                let a = match stack.last() {
+                    Some(a) => a,
+                    None => {
+                        return Err(anyhow::anyhow!("Cannot print empty stack"));
+                    }
+                };
+                print!("{}", a);
                 Ok(())
             },
         ),
@@ -264,6 +280,30 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
+        // Exit the program with code from the stack
+        TokenType::reg(
+            TokenKind::Function,
+            "exit",
+            "exit",
+            |stack: &mut Stack, _, _, _| -> Result<()> {
+                let a = stack.pop()?;
+                if a.is_int() {
+                    std::process::exit(a.as_int()? as i32);
+                } else {
+                    stack.push(a);
+                    return Err(anyhow::anyhow!("Exit requires an integer value"));
+                }
+            },
+        ),
+        // Exit the program with 0 code
+        TokenType::reg(
+            TokenKind::Function,
+            "quit",
+            "quit",
+            |_, _, _, _| -> Result<()> {
+                std::process::exit(0);
+            },
+        ),
         // If removes one element from the stack, if that is 0, it skips to the end token
         TokenType::reg(
             TokenKind::Statement,
@@ -279,6 +319,85 @@ pub fn tokens() -> Vec<TokenType> {
                         ));
                     }
                     *pc += data.as_int()? as usize - 1;
+                }
+                Ok(())
+            },
+        ),
+        // Pushes true if last two elements are equal
+        TokenType::reg(
+            TokenKind::Function,
+            "=",
+            "^=",
+            |stack: &mut Stack, _, _, _| -> Result<()> {
+                let a = stack.pop()?;
+                let b = stack.pop()?;
+                if a.is_number() && b.is_number() {
+                    if a.is_int() && b.is_int() {
+                        stack.push(Data::from_bool(b.as_int()? == a.as_int()?));
+                    } else {
+                        stack.push(Data::from_bool(b.as_float()? == a.as_float()?));
+                    }
+                } else if a.type_name() == b.type_name() {
+                    stack.push(Data::from_bool(b == a));
+                } else {
+                    stack.push(b);
+                    stack.push(a);
+                    return Err(anyhow::anyhow!("Cannot compare different types"));
+                }
+                Ok(())
+            },
+        ),
+        // Inverts the last element
+        TokenType::reg(
+            TokenKind::Function,
+            "!",
+            "!",
+            |stack: &mut Stack, _, _, _| -> Result<()> {
+                let a = stack.pop()?;
+                stack.push(Data::from_bool(a.is_false()));
+                Ok(())
+            },
+        ),
+        // Pushes true if last element is less than the second to last element
+        TokenType::reg(
+            TokenKind::Function,
+            "<",
+            "<",
+            |stack: &mut Stack, _, _, _| -> Result<()> {
+                let b = stack.pop()?;
+                let a = stack.pop()?;
+                if a.is_number() && b.is_number() {
+                    if a.is_int() && b.is_int() {
+                        stack.push(Data::from_bool(b.as_int()? < a.as_int()?));
+                    } else {
+                        stack.push(Data::from_bool(b.as_float()? < a.as_float()?));
+                    }
+                } else {
+                    stack.push(b);
+                    stack.push(a);
+                    return Err(anyhow::anyhow!("Cannot compare non-number values"));
+                }
+                Ok(())
+            },
+        ),
+        // Pushes true if last element is greater than the second to last element
+        TokenType::reg(
+            TokenKind::Function,
+            ">",
+            ">",
+            |stack: &mut Stack, _, _, _| -> Result<()> {
+                let b = stack.pop()?;
+                let a = stack.pop()?;
+                if a.is_number() && b.is_number() {
+                    if a.is_int() && b.is_int() {
+                        stack.push(Data::from_bool(b.as_int()? > a.as_int()?));
+                    } else {
+                        stack.push(Data::from_bool(b.as_float()? > a.as_float()?));
+                    }
+                } else {
+                    stack.push(b);
+                    stack.push(a);
+                    return Err(anyhow::anyhow!("Cannot compare non-number values"));
                 }
                 Ok(())
             },
@@ -320,9 +439,9 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Function,
             "mark",
             "mark",
-            |stack: &mut Stack, marks: &mut MarkList, _, _| -> Result<()> {
+            |stack: &mut Stack, marks: &mut MarkList, pc: &mut usize, _| -> Result<()> {
                 let location = stack.pop()?;
-                marks.push(location.as_string()?.to_string(), stack.len());
+                marks.push(location.as_string()?.to_string(), *pc);
                 Ok(())
             },
         ),
@@ -334,11 +453,21 @@ pub fn tokens() -> Vec<TokenType> {
             |stack: &mut Stack, marks: &mut MarkList, pc: &mut usize, _| -> Result<()> {
                 let location = stack.pop()?;
                 if let Some(new_pc) = marks.get_pc(&location.as_string()?) {
-                    *pc = new_pc + 1;
+                    *pc = new_pc;
                 } else {
                     stack.push(Data::String(location.as_string()?.to_string()));
                     return Err(anyhow::anyhow!("Mark not found"));
                 }
+                Ok(())
+            },
+        ),
+        // Returns the number of elements in the stack
+        TokenType::reg(
+            TokenKind::Function,
+            "len",
+            "len",
+            |stack: &mut Stack, _, _, _| -> Result<()> {
+                stack.push(Data::from_int(stack.len() as i32));
                 Ok(())
             },
         ),

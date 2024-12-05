@@ -1,0 +1,6 @@
+("Stack size: ") . len . nl
+
+("start") mark
+  len (0) = if quit end
+  . nl
+("start") jmp
