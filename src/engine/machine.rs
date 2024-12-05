@@ -8,8 +8,9 @@ use super::lexer::{
     lexer::lex,
     token::{Token, TokenKind, TokenType},
 };
-use super::mark::*;
-use super::stack::*;
+use super::mark::MarkList;
+use super::stack::Stack;
+use super::variables::Variables;
 use crate::args::Args;
 
 pub struct Machine {
@@ -20,6 +21,7 @@ pub struct Machine {
     main_file: Option<File>,
     tokens: Vec<Token>,
     marks: MarkList,
+    variables: Variables,
     pc: usize,
 }
 
@@ -33,6 +35,7 @@ impl Machine {
             main_file: None,
             tokens: Vec::new(),
             marks: MarkList::new(),
+            variables: Variables::new(),
             pc: 0,
         }
     }
@@ -231,19 +234,62 @@ impl Machine {
                     token.vis,
                     quote
                 );
-                print!("{}{} ", "Stack".blue().bold(), colon);
-                if self.stack.len() == 0 {
-                    println!("{}", "<empty>".bright_black());
-                }
-                for (i, element) in self.stack.elements().iter().enumerate() {
-                    if i % 5 == 0 && i != 0 {
-                        print!("       ");
+                if self.stack.len() != 0 {
+                    print!("{}{} ", "Stack".blue().bold(), colon);
+                    for (i, element) in self.stack.elements().iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("       ");
+                        }
+                        print!("{}{}{}", quote, element.to_string(), quote);
+                        if i % 5 == 4 || i == self.stack.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
                     }
-                    print!("{}{}{}", quote, element.to_string(), quote);
-                    if i % 5 == 4 || i == self.stack.len() - 1 {
-                        println!();
-                    } else {
-                        print!(", ");
+                }
+                if self.return_stack.len() != 0 {
+                    print!("{}{} ", "Ret stack".blue().bold(), colon);
+                    for (i, element) in self.return_stack.elements().iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("         ");
+                        }
+                        print!("{}{}{}", quote, element.to_string(), quote);
+                        if i % 5 == 4 || i == self.return_stack.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
+                    }
+                }
+                let local_variables = self.variables.locals();
+                if local_variables.len() != 0 {
+                    print!("{}{} ", "Loc vars".blue().bold(), colon);
+                    for (i, variable) in local_variables.iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("        ");
+                        }
+                        print!("{}{}{}", quote, variable.to_string(), quote);
+                        if i % 5 == 4 || i == local_variables.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
+                    }
+                }
+                let global_variables = self.variables.globals();
+                if global_variables.len() != 0 {
+                    print!("{}{} ", "Glo vars".blue().bold(), colon);
+                    for (i, variable) in global_variables.iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("        ");
+                        }
+                        print!("{}{}{}", quote, variable.to_string(), quote);
+                        if i % 5 == 4 || i == global_variables.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
                     }
                 }
                 // println!("PC: {:<5}; Token: \"{}\"; Data: \"{}\"", self.pc, token_type.name, data);
@@ -287,6 +333,7 @@ impl Machine {
             &self.token_types,
             &mut self.stack,
             &mut self.return_stack,
+            &mut self.variables,
             &mut self.marks,
             &mut self.pc,
         ) {
