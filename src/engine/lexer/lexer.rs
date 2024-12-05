@@ -272,7 +272,12 @@ impl Lexer {
     }
 }
 
-pub fn lex(contents: &str, token_types: Vec<TokenType>, file: String, imported_files: &mut Vec<String>) -> Result<Vec<Token>> {
+pub fn lex(
+    contents: &str,
+    token_types: Vec<TokenType>,
+    file: String,
+    imported_files: &mut Vec<String>,
+) -> Result<Vec<Token>> {
     let mut lexer = Lexer::new(contents, token_types, file);
     info!("Lexer created");
 

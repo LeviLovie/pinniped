@@ -13,9 +13,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Import,
             "import",
             "^import\\(\"?(.+)\"?\\)",
-            |_, _, _, _, _, _| -> Result<()> {
-                Ok(())
-            },
+            |_, _, _, _, _, _| -> Result<()> { Ok(()) },
         ),
         // Push a value to the stack
         TokenType::reg(
