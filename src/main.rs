@@ -1,11 +1,12 @@
 pub mod args;
 pub mod engine;
 pub mod tokens;
+pub mod included_libs;
 
 use log::{error, info};
 
 use crate::engine::machine::Machine;
-use crate::tokens::tokens;
+use crate::{tokens::tokens, included_libs::libs};
 
 fn main() {
     pretty_env_logger::init();
@@ -23,6 +24,7 @@ fn main() {
     info!("Machine created");
 
     machine.register_tokens(tokens());
+    machine.register_libs(libs());
 
     match machine.preprocess() {
         Ok(_) => {}

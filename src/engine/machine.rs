@@ -19,6 +19,7 @@ pub struct Machine {
     return_stack: Stack,
     token_types: Vec<TokenType>,
     main_file: Option<File>,
+    included_libs: Option<Vec<(String, String)>>,
     tokens: Vec<Token>,
     marks: MarkList,
     variables: Variables,
@@ -33,6 +34,7 @@ impl Machine {
             return_stack: Stack::new(),
             token_types: Vec::new(),
             main_file: None,
+            included_libs: None,
             tokens: Vec::new(),
             marks: MarkList::new(),
             variables: Variables::new(),
@@ -43,6 +45,11 @@ impl Machine {
     pub fn register_tokens(&mut self, tokens: Vec<TokenType>) {
         self.token_types.extend(tokens);
         info!("Tokens registered");
+    }
+
+    pub fn register_libs(&mut self, libs: Vec<(String, String)>) {
+        self.included_libs = Some(libs);
+        info!("Libraries registered");
     }
 
     pub fn preprocess(&mut self) -> Result<()> {
@@ -63,14 +70,23 @@ impl Machine {
 
     pub fn lex(&mut self) -> Result<()> {
         info!("Lexing main file");
+        if self.main_file.is_none() {
+            return Err(anyhow::anyhow!("Main file not loaded"));
+        }
+        if self.included_libs.is_none() {
+            return Err(anyhow::anyhow!("Included libraries not loaded"));
+        }
+
         let mut imported_files = Vec::new();
         let main_file = self.main_file.as_ref().unwrap();
         imported_files.push(main_file.path.clone());
+        let included_libs = self.included_libs.as_ref().unwrap();
         let mut tokens = lex(
             main_file.contents.as_str(),
             self.token_types.clone(),
             main_file.path.clone(),
             &mut imported_files,
+            included_libs.clone(),
         )?;
         debug!("Imported files: {:?}", imported_files);
         self.tokens.append(&mut tokens);

@@ -13,10 +13,11 @@ struct Lexer {
     col: usize,
     tokens: Vec<Token>,
     token_types: Vec<TokenType>,
+    included_libs: Vec<(String, String)>,
 }
 
 impl Lexer {
-    fn new(contents: &str, token_types: Vec<TokenType>, file: String) -> Self {
+    fn new(contents: &str, token_types: Vec<TokenType>, file: String, included_libs: Vec<(String, String)>) -> Self {
         let mut contents = contents.to_string();
         if contents.ends_with('\n') {
             contents.pop();
@@ -31,6 +32,7 @@ impl Lexer {
             col: 1,
             tokens: Vec::new(),
             token_types,
+            included_libs,
         }
     }
 
@@ -91,16 +93,34 @@ impl Lexer {
                     }
                     if !imported_files.contains(&file_name) {
                         info!("Importing file: {}", file_name);
-                        imported_files.push(file_name.clone());
-                        let mut main_file = File::new(file_name.clone(), file_name)?;
-                        main_file.read()?;
-                        let mut tokens = lex(
-                            main_file.contents.as_str(),
-                            self.token_types.clone(),
-                            main_file.path.clone(),
-                            imported_files,
-                        )?;
-                        self.tokens.append(&mut tokens);
+                        if self.included_libs.iter().any(|(name, _)| name == &file_name) {
+                            let (name, contents) = self
+                                .included_libs
+                                .iter()
+                                .find(|(name, _)| name == &file_name)
+                                .unwrap();
+
+                            let mut tokens = lex(
+                                contents,
+                                self.token_types.clone(),
+                                name.clone(),
+                                imported_files,
+                                self.included_libs.clone(),
+                            )?;
+                            self.tokens.append(&mut tokens);
+                        } else {
+                            imported_files.push(file_name.clone());
+                            let mut main_file = File::new(file_name.clone(), file_name)?;
+                            main_file.read()?;
+                            let mut tokens = lex(
+                                main_file.contents.as_str(),
+                                self.token_types.clone(),
+                                main_file.path.clone(),
+                                imported_files,
+                                self.included_libs.clone(),
+                            )?;
+                            self.tokens.append(&mut tokens);
+                        }
                     } else {
                         info!("File already imported: {}", file_name);
                     }
@@ -167,9 +187,10 @@ impl Lexer {
                 }
                 if end_token.is_none() {
                     return Err(anyhow::anyhow!(
-                        "No matching end token found for token at {}:{}",
+                        "No matching end token found for token at {}:{}: \"{}\"",
                         token.line,
-                        token.col
+                        token.col,
+                        token.get_type(self.token_types.clone())?.name
                     ));
                 }
                 token.data = Data::from_int(end_token.unwrap() as i32);
@@ -198,9 +219,10 @@ impl Lexer {
                 }
                 if end_token.is_none() {
                     return Err(anyhow::anyhow!(
-                        "No matching end token found for token at {}:{}",
+                        "No matching end token found for token at {}:{}: \"{}\"",
                         token.line,
-                        token.col
+                        token.col,
+                        token.get_type(self.token_types.clone())?.name
                     ));
                 }
                 token.data = Data::from_int(end_token.unwrap() as i32);
@@ -227,9 +249,10 @@ impl Lexer {
                 }
                 if while_token.is_none() {
                     return Err(anyhow::anyhow!(
-                        "No matching end token found for token at {}:{}",
+                        "No matching end token found for token at {}:{}: \"{}\"",
                         token.line,
-                        token.col
+                        token.col,
+                        token.get_type(self.token_types.clone())?.name
                     ));
                 }
                 token.data = Data::from_int(while_token.unwrap() as i32)
@@ -258,9 +281,10 @@ impl Lexer {
                 }
                 if ret_token.is_none() {
                     return Err(anyhow::anyhow!(
-                        "No matching ret token found for token at {}:{}",
+                        "No matching ret token found for token at {}:{}: \"{}\"",
                         token.line,
-                        token.col
+                        token.col,
+                        token.get_type(self.token_types.clone())?.name
                     ));
                 }
                 token.data = Data::from_int(ret_token.unwrap() as i32);
@@ -272,8 +296,8 @@ impl Lexer {
     }
 }
 
-pub fn lex(contents: &str, token_types: Vec<TokenType>, file: String, imported_files: &mut Vec<String>) -> Result<Vec<Token>> {
-    let mut lexer = Lexer::new(contents, token_types, file);
+pub fn lex(contents: &str, token_types: Vec<TokenType>, file: String, imported_files: &mut Vec<String>, included_libs: Vec<(String, String)>) -> Result<Vec<Token>> {
+    let mut lexer = Lexer::new(contents, token_types, file, included_libs);
     info!("Lexer created");
 
     while !lexer.contents.is_empty() {

@@ -539,7 +539,7 @@ pub fn tokens() -> Vec<TokenType> {
                             "If statement requires a number as the offset. Were tokens linked?"
                         ));
                     }
-                    *pc += data.as_int()? as usize - 1;
+                    *pc += data.as_int()? as usize;
                 }
                 Ok(())
             },

@@ -1,0 +1,9 @@
+(print) proc
+  len (0) < if
+    . nl
+  endif
+ret
+
+(debug) proc
+  : {print}
+ret
