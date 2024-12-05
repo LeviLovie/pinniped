@@ -81,10 +81,14 @@ impl Machine {
                 // Go through all the tokens and find the matching end token
                 let mut end_token = None;
                 let mut depth = 0;
-                let tokens = tokens.clone()[i+1..].to_vec();
+                let tokens = tokens.clone()[i + 1..].to_vec();
                 for (i, t) in tokens.iter().enumerate() {
                     let token_type = t.get_type(self.token_types.clone())?;
-                    debug!("Subtoken: {:?}, type: {:?}", t, t.get_type(self.token_types.clone()));
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
                     if token_type.type_ == TokenKind::EndIf {
                         if depth == 0 {
                             end_token = Some(i);
@@ -108,10 +112,14 @@ impl Machine {
                 // Go through all the tokens and find the matching end token
                 let mut end_token = None;
                 let mut depth = 0;
-                let tokens = tokens.clone()[i+1..].to_vec();
+                let tokens = tokens.clone()[i + 1..].to_vec();
                 for (i, t) in tokens.iter().enumerate() {
                     let token_type = t.get_type(self.token_types.clone())?;
-                    debug!("Subtoken: {:?}, type: {:?}", t, t.get_type(self.token_types.clone()));
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
                     if token_type.type_ == TokenKind::End {
                         if depth == 0 {
                             end_token = Some(i);
