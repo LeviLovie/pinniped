@@ -1,5 +1,4 @@
-on:
-  pull_request: {}
+on: pull_request
 
 name: Rustfmt
 
@@ -16,4 +15,4 @@ jobs:
       - uses: mbrobbel/rustfmt-check@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          mode: review
+          mode: commit
