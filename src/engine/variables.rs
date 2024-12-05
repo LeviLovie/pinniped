@@ -176,7 +176,6 @@ mod tests {
                 variables.remove("name", true);
                 assert_eq!(variables.get("name", true), None);
             }
-            
             #[test]
             fn remove_locals() {
                 let mut variables = Variables::new();
