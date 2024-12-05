@@ -3,7 +3,7 @@
 # pinniped
 Stack based programming language
 
-## Running
+## Installation
 ### Homebrew
 On MacOS, you can install pinniped using [homebrew](https://brew.sh/):
 ```sh
