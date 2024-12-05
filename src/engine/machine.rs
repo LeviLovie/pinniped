@@ -92,7 +92,9 @@ impl Machine {
                             } else {
                                 depth -= 1;
                             }
-                        } else if token_type.type_ == TokenKind::Statement && token_type.name != "end" {
+                        } else if token_type.type_ == TokenKind::Statement
+                            && token_type.name != "end"
+                        {
                             depth += 1;
                         }
                     }
@@ -127,7 +129,14 @@ impl Machine {
                 let quote = "\"".bright_black();
                 let colon = ":".bright_black();
                 let coma = ",".bright_black();
-                println!("\n{}{} {}{}{}", "Line".blue().bold(), colon, quote, token.vis, quote);
+                println!(
+                    "\n{}{} {}{}{}",
+                    "Line".blue().bold(),
+                    colon,
+                    quote,
+                    token.vis,
+                    quote
+                );
                 print!("{}{} ", "Stack".blue().bold(), colon);
                 if self.stack.len() == 0 {
                     println!("{}", "<empty>".bright_black());
@@ -145,8 +154,23 @@ impl Machine {
                 }
                 // println!("PC: {:<5}; Token: \"{}\"; Data: \"{}\"", self.pc, token_type.name, data);
                 print!("{}{} {}{} ", "PC".blue().bold(), colon, self.pc, coma);
-                print!("{}{} {}{}{}{} ", "Token".blue().bold(), colon, quote, token_type.name, quote, coma);
-                println!("{}{} {}{}{}", "Data".blue().bold(), colon, quote, data, quote);
+                print!(
+                    "{}{} {}{}{}{} ",
+                    "Token".blue().bold(),
+                    colon,
+                    quote,
+                    token_type.name,
+                    quote,
+                    coma
+                );
+                println!(
+                    "{}{} {}{}{}",
+                    "Data".blue().bold(),
+                    colon,
+                    quote,
+                    data,
+                    quote
+                );
                 let mut input = String::new();
                 std::io::stdin().read_line(&mut input)?;
             }

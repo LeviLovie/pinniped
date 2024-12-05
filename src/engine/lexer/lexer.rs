@@ -107,7 +107,7 @@ impl Lexer {
                 self.line,
                 self.col,
                 word
-            ))
+            ));
         }
 
         Ok(())
