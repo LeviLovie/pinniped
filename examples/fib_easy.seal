@@ -1,0 +1,11 @@
+(0) : . nl >("fib_a") (1) >("fib_b")
+
+("fib") proc
+  <("fib_a") <("fib_b")
+  : rol +
+  >("fib_b") >("fib_a")
+ret
+
+while <("fib_b") : (1000000) > do
+  . nl {"fib"}
+end

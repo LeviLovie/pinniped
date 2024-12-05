@@ -32,9 +32,17 @@ impl Variables {
 
     pub fn add(&mut self, name: String, value: Data, local: bool) {
         if local {
-            self.local.push(Variable::new(name, value));
+            if self.get(name.as_str(), true).is_none() {
+                self.local.push(Variable::new(name, value));
+            } else {
+                self.set(&name, value, true);
+            }
         } else {
-            self.variables.push(Variable::new(name, value));
+            if self.get(name.as_str(), false).is_none() {
+                self.variables.push(Variable::new(name, value));
+            } else {
+                self.set(&name, value, false);
+            }
         }
     }
 
@@ -154,6 +162,16 @@ mod tests {
             }
 
             #[test]
+            fn add_overwrite() {
+                let mut variables = Variables::new();
+                variables.add("name".to_string(), Data::Float(42.0), true);
+                variables.add("name".to_string(), Data::Float(43.0), true);
+                assert_eq!(variables.local.len(), 1);
+                assert_eq!(variables.variables.len(), 0);
+                assert_eq!(variables.get("name", true), Some(&Data::Float(43.0)));
+            }
+
+            #[test]
             fn get() {
                 let mut variables = Variables::new();
                 variables.add("name".to_string(), Data::Float(42.0), true);
@@ -196,6 +214,16 @@ mod tests {
                 variables.add("name".to_string(), Data::Float(42.0), false);
                 assert_eq!(variables.local.len(), 0);
                 assert_eq!(variables.variables.len(), 1);
+            }
+
+            #[test]
+            fn add_overwrite() {
+                let mut variables = Variables::new();
+                variables.add("name".to_string(), Data::Float(42.0), false);
+                variables.add("name".to_string(), Data::Float(43.0), false);
+                assert_eq!(variables.local.len(), 0);
+                assert_eq!(variables.variables.len(), 1);
+                assert_eq!(variables.get("name", false), Some(&Data::Float(43.0)));
             }
 
             #[test]

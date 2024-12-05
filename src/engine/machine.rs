@@ -27,14 +27,14 @@ pub struct Machine {
 }
 
 impl Machine {
-    pub fn new(args: Args) -> Self {
+    pub fn new(args: Args, main_file: File) -> Self {
         Self {
             args,
             stack: Stack::new(),
             return_stack: Stack::new(),
             token_types: Vec::new(),
-            main_file: None,
             included_libs: None,
+            main_file: Some(main_file),
             tokens: Vec::new(),
             marks: MarkList::new(),
             variables: Variables::new(),
@@ -59,12 +59,6 @@ impl Machine {
         }
         info!("Arguments pushed to stack");
 
-        info!("Loading main file: {}", self.args.file);
-        let mut main_file = File::new("main".to_string(), self.args.file.clone())?;
-        main_file.read()?;
-        self.main_file = Some(main_file);
-
-        info!("Main file loaded");
         Ok(())
     }
 

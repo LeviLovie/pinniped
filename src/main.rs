@@ -1,12 +1,12 @@
 pub mod args;
 pub mod engine;
-pub mod tokens;
 pub mod included_libs;
+pub mod tokens;
 
 use log::{error, info};
 
-use crate::engine::machine::Machine;
-use crate::{tokens::tokens, included_libs::libs};
+use crate::engine::{file::File, machine::Machine};
+use crate::{included_libs::libs, tokens::tokens};
 
 fn main() {
     pretty_env_logger::init();
@@ -20,7 +20,24 @@ fn main() {
     }
     info!("Starting interpreter on file: {}", args.file);
 
-    let mut machine = Machine::new(args);
+    info!("Loading main file: {}", args.file);
+    let mut main_file = match File::new("main".to_string(), args.file.clone()) {
+        Ok(file) => file,
+        Err(e) => {
+            error!("Error loading main file: {}", e);
+            std::process::exit(1);
+        }
+    };
+    match main_file.read() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Error reading main file: {}", e);
+            std::process::exit(1);
+        }
+    };
+    info!("Main file loaded");
+
+    let mut machine = Machine::new(args, main_file);
     info!("Machine created");
 
     machine.register_tokens(tokens());
