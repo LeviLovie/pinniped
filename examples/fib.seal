@@ -1,0 +1,7 @@
+(0) : . nl (1)
+
+(0) while swp : (100) > do
+  : . nl
+  rol swp : rol +
+  rol
+end
