@@ -9,7 +9,14 @@ use crate::tokens::tokens;
 
 fn main() {
     pretty_env_logger::init();
-    let args = args::parse_args();
+    let mut args = args::parse_args();
+    if args.file == "NONE" {
+        if args.args.is_empty() {
+            error!("No file or arguments provided");
+            std::process::exit(1);
+        }
+        args.file = args.args[0].clone();
+    }
     info!("Starting interpreter on file: {}", args.file);
 
     let mut machine = Machine::new(args);
