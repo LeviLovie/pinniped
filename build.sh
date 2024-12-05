@@ -1,20 +1,12 @@
 #!/bin/bash
 # Cross-compilation for Windows using Docker
 
-echo "Building for Current OS (Should be MacOS)"
-cargo build --release
-
-echo "Building for Windows"
-docker build -t pinniped-win . -f Dockerfile.windows
-docker run --rm -v .:/app pinniped-win
-
-echo "Building for Linux"
-docker build -t pinniped-linux . -f Dockerfile.linux
-docker run --rm -v .:/app pinniped-linux
-
-echo "Combining"
 rm -rf build
 mkdir -p build
+
+echo "Building for Current OS (Should be MacOS)"
+rm -rf target/release
+cargo build --release
 
 mkdir build/macos
 cp target/release/pinniped build/macos/pinniped
@@ -23,12 +15,21 @@ cp README.md build/macos/README.md
 cd build && zip -r macos.zip macos && cd ..
 rm -rf build/macos
 
+echo "Building for Windows"
+docker build -t pinniped-win . -f Dockerfile.windows
+docker run --rm -v .:/app pinniped-win
+
 mkdir build/windows
 cp target/x86_64-pc-windows-gnu/release/pinniped.exe build/windows/pinniped.exe
 cp -r examples build/windows/examples
 cp README.md build/windows/README.md
 cd build && zip -r windows.zip windows && cd ..
 rm -rf build/windows
+
+echo "Building for Linux"
+rm -rf target/release
+docker build -t pinniped-linux . -f Dockerfile.linux
+docker run --rm -v .:/app pinniped-linux
 
 mkdir build/linux
 cp target/release/pinniped build/linux/pinniped

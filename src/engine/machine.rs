@@ -1,12 +1,12 @@
 use anyhow::Result;
 use colored::Colorize;
-use log::info;
+use log::{info, debug};
 
 use super::data::Data;
 use super::file::File;
 use super::lexer::{
     lexer::lex,
-    token::{Token, TokenType},
+    token::{Token, TokenType, TokenKind},
 };
 use super::stack::*;
 use crate::args::Args;
@@ -34,6 +34,7 @@ impl Machine {
 
     pub fn register_tokens(&mut self, tokens: Vec<TokenType>) {
         self.token_types.extend(tokens);
+        info!("Tokens registered");
     }
 
     pub fn preprocess(&mut self) -> Result<()> {
@@ -48,6 +49,7 @@ impl Machine {
         main_file.read()?;
         self.main_file = Some(main_file);
 
+        info!("Main file loaded");
         Ok(())
     }
 
@@ -61,6 +63,41 @@ impl Machine {
         )?;
         self.tokens.append(&mut tokens);
 
+        info!("Main file lexed");
+        Ok(())
+    }
+
+    pub fn after_lex(&mut self) -> Result<()> {
+        info!("Starting after-lexing");
+
+        let tokens = self.tokens.clone();
+        for token in &mut self.tokens {
+            let token_type = token.get_type(self.token_types.clone())?.type_;
+            if token_type == TokenKind::Statement {
+                // Go through all the tokens and find the matching end token
+                let mut end_token = None;
+                let mut depth = 0;
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
+                        if t.data == token.data {
+                            if depth == 0 {
+                                end_token = Some(i);
+                                debug!("Found end token for token at {}:{}", token.line, token.col);
+                                break;
+                            } else {
+                                depth -= 1;
+                            }
+                        } else if token_type.type_ == TokenKind::Statement {
+                            depth += 1;
+                        }
+                    }
+                }
+                token.data = Data::from_int(end_token.unwrap() as i32);
+            }
+        }
+
+        info!("After-lexing complete");
         Ok(())
     }
 
@@ -72,6 +109,7 @@ impl Machine {
             self.pc += 1;
         }
 
+        info!("Interpretation complete");
         Ok(())
     }
 
@@ -81,7 +119,7 @@ impl Machine {
         }
         let token = &self.tokens[self.pc];
 
-        info!("Interpreting token: {:?}", token);
+        debug!("Interpreting token: {:?}", token);
         match token.exec(&self.token_types, &mut self.stack, &mut self.pc) {
             Ok(_) => {}
             Err(e) => {

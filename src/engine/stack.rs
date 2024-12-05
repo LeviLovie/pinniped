@@ -62,7 +62,7 @@ impl Stack {
 }
 
 #[cfg(test)]
-mod stack {
+mod tests {
     #[test]
     fn test_push() {
         let mut stack = super::Stack::new();

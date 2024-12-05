@@ -9,6 +9,7 @@ pub fn tokens() -> Vec<TokenType> {
         // Push a value to the stack
         TokenType::reg(
             TokenKind::Push,
+            "push",
             "\\((.+)\\)", // Captures anything exept whitespace inside ()
             |stack: &mut Stack, _, add_value| -> Result<()> {
                 stack.push(add_value);
@@ -18,6 +19,7 @@ pub fn tokens() -> Vec<TokenType> {
         // Pop and print the top value from the stack
         TokenType::reg(
             TokenKind::Function,
+            "pop",
             "\\.",
             |stack: &mut Stack, _, _| -> Result<()> {
                 print!("{}", stack.pop()?);
@@ -25,13 +27,14 @@ pub fn tokens() -> Vec<TokenType> {
             },
         ),
         // Print \n
-        TokenType::reg(TokenKind::Function, "nl", |_, _, _| -> Result<()> {
+        TokenType::reg(TokenKind::Function, "nl", "nl", |_, _, _| -> Result<()> {
             println!();
             Ok(())
         }),
         // Add the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
+            "+",
             "\\+",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
@@ -54,6 +57,7 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             "-",
+            "-",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
@@ -74,6 +78,7 @@ pub fn tokens() -> Vec<TokenType> {
         // Multiply the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
+            "*",
             "\\*",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
@@ -96,6 +101,7 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             "/",
+            "/",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
@@ -117,6 +123,7 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             "%",
+            "%",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
@@ -137,6 +144,7 @@ pub fn tokens() -> Vec<TokenType> {
         // Exponentiate the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
+            "^",
             "\\^",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
@@ -159,6 +167,7 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             "~",
+            "~",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 if a.is_number() {
@@ -178,6 +187,7 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             ":",
+            ":",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 stack.push(a.clone());
@@ -188,6 +198,7 @@ pub fn tokens() -> Vec<TokenType> {
         // Swap the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
+            "swp",
             "swp",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
@@ -200,6 +211,7 @@ pub fn tokens() -> Vec<TokenType> {
         // Rotate the top three values from the stack to the left
         TokenType::reg(
             TokenKind::Function,
+            "ror",
             "ror",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
@@ -215,6 +227,7 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             "rol",
+            "rol",
             |stack: &mut Stack, _, _| -> Result<()> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
@@ -229,31 +242,70 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             "clr",
+            "clr",
             |stack: &mut Stack, _, _| -> Result<()> {
                 stack.clear();
                 Ok(())
             },
         ),
-        // Duplicate the top value from the stack n times
-        TokenType::reg(
-            TokenKind::Function,
-            "dup\\((\\d+)\\)",
-            |stack: &mut Stack, _, add_value| -> Result<()> {
-                let n = add_value.as_int()?;
-                let a = stack.pop()?;
-                for _ in 0..n {
-                    stack.push(a.clone());
-                }
-                stack.push(a);
-                Ok(())
-            },
-        ),
         // Debug the stack
         TokenType::reg(
-            TokenKind::Var,
+            TokenKind::Function,
+            "`",
             "`",
             |stack: &mut Stack, _, _| -> Result<()> {
                 println!("Stack debug:\n{}", stack);
+                Ok(())
+            },
+        ),
+        // If removes one element from the stack, if that is 0, it skips to the end token
+        TokenType::reg(
+            TokenKind::Statement,
+            "if",
+            "if",
+            |stack: &mut Stack, pc_counter: &mut usize, data: Data| -> Result<()> {
+                let last_element = stack.pop()?;
+                if last_element.is_false() {
+                    if !data.is_number() {
+                        stack.push(last_element);
+                        return Err(anyhow::anyhow!("If statement requires a number as the offset. Were tokens linked?"));
+                    }
+                    *pc_counter += data.as_int()? as usize - 1;
+                }
+                Ok(())
+            },
+        ),
+        // End token for if
+        TokenType::reg(
+            TokenKind::Statement,
+            "end",
+            "end",
+            |_, _, _| -> Result<()> {
+                Ok(())
+            },
+        ),
+        // Push current pc to the stack
+        TokenType::reg(
+            TokenKind::Function,
+            "here",
+            "here",
+            |stack: &mut Stack, pc_counter: &mut usize, _| -> Result<()> {
+                stack.push(Data::from_int(*pc_counter as i32));
+                Ok(())
+            },
+        ),
+        // Jump to the top value of the stack
+        TokenType::reg(
+            TokenKind::Function,
+            "jmp",
+            "jmp",
+            |stack: &mut Stack, pc_counter: &mut usize, _| -> Result<()> {
+                let a = stack.pop()?;
+                if !a.is_number() {
+                    stack.push(a);
+                    return Err(anyhow::anyhow!("Jump requires a number as the offset"));
+                }
+                *pc_counter = a.as_int()? as usize;
                 Ok(())
             },
         ),

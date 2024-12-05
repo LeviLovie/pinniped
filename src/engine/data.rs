@@ -6,7 +6,6 @@ pub enum Data {
     Int(i32),
     Float(f32),
     Bool(bool),
-    Any,
     None,
 }
 
@@ -17,7 +16,6 @@ impl std::fmt::Display for Data {
             Data::Int(i) => write!(f, "{}", i),
             Data::Float(fl) => write!(f, "{}", fl),
             Data::Bool(b) => write!(f, "{}", b),
-            Data::Any => write!(f, "Any"),
             Data::None => write!(f, "None"),
         }
     }
@@ -64,6 +62,20 @@ impl Data {
         Data::String(s.to_string())
     }
 
+    pub fn is_false(&self) -> bool {
+        match &self {
+            Data::Bool(b) => !*b,
+            Data::Int(i) => *i == 0,
+            Data::Float(f) => *f == 0.0,
+            Data::String(s) => s.is_empty(),
+            Data::None => true,
+        }
+    }
+
+    pub fn is_true(&self) -> bool {
+        !self.is_false()
+    }
+
     pub fn is_int(&self) -> bool {
         match &self {
             Data::Int(_) => true,
@@ -95,13 +107,6 @@ impl Data {
     pub fn is_number(&self) -> bool {
         match &self {
             Data::Int(_) | Data::Float(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_any(&self) -> bool {
-        match &self {
-            Data::Any => true,
             _ => false,
         }
     }
@@ -148,13 +153,22 @@ impl Data {
         }
     }
 
+    pub fn type_name(&self) -> &str {
+        match &self {
+            Data::Int(_) => "int",
+            Data::Float(_) => "float",
+            Data::Bool(_) => "bool",
+            Data::String(_) => "string",
+            Data::None => "None",
+        }
+    }
+
     pub fn check_type(&self, other: &Data) -> bool {
         match &self {
             Data::Int(_) => other.is_int(),
             Data::Float(_) => other.is_float(),
             Data::Bool(_) => other.is_bool(),
             Data::String(_) => other.is_string(),
-            Data::Any => true,
             Data::None => other.is_none(),
         }
     }
@@ -323,7 +337,6 @@ mod tests {
         assert!(!data.check_type(&Data::Float(42.0)));
         assert!(!data.check_type(&Data::Bool(true)));
         assert!(!data.check_type(&Data::String("42".to_string())));
-        assert!(!data.check_type(&Data::Any));
         assert!(!data.check_type(&Data::None));
 
         let data = Data::Float(42.0);
@@ -331,7 +344,6 @@ mod tests {
         assert!(data.check_type(&Data::Float(42.0)));
         assert!(!data.check_type(&Data::Bool(true)));
         assert!(!data.check_type(&Data::String("42".to_string())));
-        assert!(!data.check_type(&Data::Any));
         assert!(!data.check_type(&Data::None));
 
         let data = Data::Bool(true);
@@ -339,7 +351,6 @@ mod tests {
         assert!(!data.check_type(&Data::Float(42.0)));
         assert!(data.check_type(&Data::Bool(true)));
         assert!(!data.check_type(&Data::String("42".to_string())));
-        assert!(!data.check_type(&Data::Any));
         assert!(!data.check_type(&Data::None));
 
         let data = Data::String("42".to_string());
@@ -347,23 +358,65 @@ mod tests {
         assert!(!data.check_type(&Data::Float(42.0)));
         assert!(!data.check_type(&Data::Bool(true)));
         assert!(data.check_type(&Data::String("42".to_string())));
-        assert!(!data.check_type(&Data::Any));
         assert!(!data.check_type(&Data::None));
-
-        let data = Data::Any;
-        assert!(data.check_type(&Data::Int(42)));
-        assert!(data.check_type(&Data::Float(42.0)));
-        assert!(data.check_type(&Data::Bool(true)));
-        assert!(data.check_type(&Data::String("42".to_string())));
-        assert!(data.check_type(&Data::Any));
-        assert!(data.check_type(&Data::None));
 
         let data = Data::None;
         assert!(!data.check_type(&Data::Int(42)));
         assert!(!data.check_type(&Data::Float(42.0)));
         assert!(!data.check_type(&Data::Bool(true)));
         assert!(!data.check_type(&Data::String("42".to_string())));
-        assert!(!data.check_type(&Data::Any));
         assert!(data.check_type(&Data::None));
+    }
+
+    #[test]
+    fn is_false() {
+        let data = Data::Int(0);
+        assert!(data.is_false());
+        let data = Data::Int(42);
+        assert!(!data.is_false());
+
+        let data = Data::Float(0.0);
+        assert!(data.is_false());
+        let data = Data::Float(42.0);
+        assert!(!data.is_false());
+
+        let data = Data::Bool(false);
+        assert!(data.is_false());
+        let data = Data::Bool(true);
+        assert!(!data.is_false());
+
+        let data = Data::String("".to_string());
+        assert!(data.is_false());
+        let data = Data::String("42".to_string());
+        assert!(!data.is_false());
+
+        let data = Data::None;
+        assert!(data.is_false());
+    }
+
+    #[test]
+    fn is_true() {
+        let data = Data::Int(0);
+        assert!(!data.is_true());
+        let data = Data::Int(42);
+        assert!(data.is_true());
+
+        let data = Data::Float(0.0);
+        assert!(!data.is_true());
+        let data = Data::Float(42.0);
+        assert!(data.is_true());
+
+        let data = Data::Bool(false);
+        assert!(!data.is_true());
+        let data = Data::Bool(true);
+        assert!(data.is_true());
+
+        let data = Data::String("".to_string());
+        assert!(!data.is_true());
+        let data = Data::String("42".to_string());
+        assert!(data.is_true());
+
+        let data = Data::None;
+        assert!(!data.is_true());
     }
 }
