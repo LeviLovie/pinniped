@@ -6,8 +6,6 @@ Stack based programming language
 ## Running
 ### Provided binaries
 I build the project for Windows, MacOS, and Linux every time a new version comes out. You can download the lates binaries from the [releases](https://github.com/LeviLovie/pinniped/releases/latest).
-> [!WARNING]
-> During the download and running of the provided executables, antivirus might be suspicious of the executables. This is okay as the executables are not signed. If you don't trust the executables you can compile the source code yourself. Check the [README.md](###Compiling) for instructions
 
 ### Compiling
 You can compile the code yourself by downloading the source code from the [latest release](https://github.com/LeviLovie/pinniped/releases/latest) or from the [repo itself](https://github.com/LeviLovie/pinniped).
