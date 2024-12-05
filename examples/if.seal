@@ -1,10 +1,10 @@
 (0) if
   ("0: Entered if") . nl
-end
+endif
 ("0: Exited if") . nl nl
 
 (true) if
   ("1: Entered if") . nl
-end
+endif
 ("1: Exited if") . nl
 

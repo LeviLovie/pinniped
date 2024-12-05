@@ -8,7 +8,11 @@ type TokenFunc = fn(&mut Stack, &mut MarkList, &mut usize, Data) -> Result<()>;
 pub enum TokenKind {
     Function,
     Push,
-    Statement,
+    If,
+    EndIf,
+    While,
+    Do,
+    End,
 }
 
 #[derive(Debug, Clone)]
