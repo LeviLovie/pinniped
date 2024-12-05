@@ -18,10 +18,13 @@ cargo build --release
 ```
 That will generate `target/release/panniped` - that is your executable.
 
-### Compiling the same as in [releases](https://github.com/LeviLovie/pinniped/releases)
+### Cross-compiling
+This is what I do to compile the [releases](https://github.com/LeviLovie/pinniped/releases)
+> [!WARNING]
+> This script builds for all 3 operating systems and should be ran on a MacOS, otherwise the `macos` build is going to containg build for you os.
+
+Script requires [rust](https://www.rust-lang.org/tools/install) and [docker](https://www.docker.com)
 In order to compile the same executables as in release you can run the build script:
 ```sh
 ./build.sh
 ```
-> [!WARNING]
-> This script only works on MacOS and requires [rust](https://www.rust-lang.org/tools/install) and [docker](https://www.docker.com)
