@@ -8,17 +8,20 @@ use super::lexer::{
     lexer::lex,
     token::{Token, TokenKind, TokenType},
 };
-use super::mark::*;
-use super::stack::*;
+use super::mark::MarkList;
+use super::stack::Stack;
+use super::variables::Variables;
 use crate::args::Args;
 
 pub struct Machine {
     args: Args,
     stack: Stack,
+    return_stack: Stack,
     token_types: Vec<TokenType>,
     main_file: Option<File>,
     tokens: Vec<Token>,
     marks: MarkList,
+    variables: Variables,
     pc: usize,
 }
 
@@ -27,10 +30,12 @@ impl Machine {
         Self {
             args,
             stack: Stack::new(),
+            return_stack: Stack::new(),
             token_types: Vec::new(),
             main_file: None,
             tokens: Vec::new(),
             marks: MarkList::new(),
+            variables: Variables::new(),
             pc: 0,
         }
     }
@@ -76,27 +81,28 @@ impl Machine {
         let tokens = self.tokens.clone();
         for (i, token) in &mut self.tokens.iter_mut().enumerate() {
             let token_type = token.get_type(self.token_types.clone())?.type_;
-            if token_type == TokenKind::Statement && token.data != Data::from_str("end") {
-                debug!("Token: {:?}", token);
+            debug!("Token: {:?}", token);
+            if token_type == TokenKind::If {
                 // Go through all the tokens and find the matching end token
                 let mut end_token = None;
                 let mut depth = 0;
-                let tokens = tokens.clone()[i..].to_vec();
+                let tokens = tokens.clone()[i + 1..].to_vec();
                 for (i, t) in tokens.iter().enumerate() {
                     let token_type = t.get_type(self.token_types.clone())?;
-                    if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
-                        if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
-                            if depth == 0 {
-                                end_token = Some(i);
-                                break;
-                            } else {
-                                depth -= 1;
-                            }
-                        } else if token_type.type_ == TokenKind::Statement
-                            && token_type.name != "end"
-                        {
-                            depth += 1;
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
+                    if token_type.type_ == TokenKind::EndIf {
+                        if depth == 0 {
+                            end_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
                         }
+                    } else if token_type.type_ == TokenKind::If {
+                        depth += 1;
                     }
                 }
                 if end_token.is_none() {
@@ -107,6 +113,97 @@ impl Machine {
                     ));
                 }
                 token.data = Data::from_int(end_token.unwrap() as i32);
+            } else if token_type == TokenKind::Do {
+                // Go through all the tokens and find the matching end token
+                let mut end_token = None;
+                let mut depth = 0;
+                let tokens = tokens.clone()[i + 1..].to_vec();
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
+                    if token_type.type_ == TokenKind::End {
+                        if depth == 0 {
+                            end_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
+                        }
+                    } else if token_type.type_ == TokenKind::While {
+                        depth += 1;
+                    }
+                }
+                if end_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching end token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
+                }
+                token.data = Data::from_int(end_token.unwrap() as i32);
+            } else if token_type == TokenKind::End {
+                // Go back through ass the tokens and find a while token
+                let mut while_token = None;
+                let mut depth = 0;
+                let mut tokens = tokens.clone()[..i].to_vec();
+                tokens.reverse();
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    let token_kind = token_type.type_.clone();
+                    debug!("Subtoken: {:?}, type: {:?}", "", token_type.type_);
+                    if token_type.type_ == TokenKind::While {
+                        if depth == 0 {
+                            while_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
+                        }
+                    } else if token_kind == TokenKind::End {
+                        depth += 1;
+                    }
+                }
+                if while_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching end token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
+                }
+                token.data = Data::from_int(while_token.unwrap() as i32)
+            } else if token_type == TokenKind::Proc {
+                // Go through all the tokens and find the matching ret token
+                let mut ret_token = None;
+                let mut depth = 0;
+                let tokens = tokens.clone()[i + 1..].to_vec();
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
+                    if token_type.type_ == TokenKind::ProcRet {
+                        if depth == 0 {
+                            ret_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
+                        }
+                    } else if token_type.type_ == TokenKind::Proc {
+                        depth += 1;
+                    }
+                }
+                if ret_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching ret token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
+                }
+                token.data = Data::from_int(ret_token.unwrap() as i32);
             }
         }
 
@@ -137,19 +234,62 @@ impl Machine {
                     token.vis,
                     quote
                 );
-                print!("{}{} ", "Stack".blue().bold(), colon);
-                if self.stack.len() == 0 {
-                    println!("{}", "<empty>".bright_black());
-                }
-                for (i, element) in self.stack.elements().iter().enumerate() {
-                    if i % 5 == 0 && i != 0 {
-                        print!("       ");
+                if self.stack.len() != 0 {
+                    print!("{}{} ", "Stack".blue().bold(), colon);
+                    for (i, element) in self.stack.elements().iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("       ");
+                        }
+                        print!("{}{}{}", quote, element.to_string(), quote);
+                        if i % 5 == 4 || i == self.stack.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
                     }
-                    print!("{}{}{}", quote, element.to_string(), quote);
-                    if i % 5 == 4 || i == self.stack.len() - 1 {
-                        println!();
-                    } else {
-                        print!(", ");
+                }
+                if self.return_stack.len() != 0 {
+                    print!("{}{} ", "Ret stack".blue().bold(), colon);
+                    for (i, element) in self.return_stack.elements().iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("         ");
+                        }
+                        print!("{}{}{}", quote, element.to_string(), quote);
+                        if i % 5 == 4 || i == self.return_stack.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
+                    }
+                }
+                let local_variables = self.variables.locals();
+                if local_variables.len() != 0 {
+                    print!("{}{} ", "Loc vars".blue().bold(), colon);
+                    for (i, variable) in local_variables.iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("        ");
+                        }
+                        print!("{}{}{}", quote, variable.to_string(), quote);
+                        if i % 5 == 4 || i == local_variables.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
+                    }
+                }
+                let global_variables = self.variables.globals();
+                if global_variables.len() != 0 {
+                    print!("{}{} ", "Glo vars".blue().bold(), colon);
+                    for (i, variable) in global_variables.iter().enumerate() {
+                        if i % 5 == 0 && i != 0 {
+                            print!("        ");
+                        }
+                        print!("{}{}{}", quote, variable.to_string(), quote);
+                        if i % 5 == 4 || i == global_variables.len() - 1 {
+                            println!();
+                        } else {
+                            print!(", ");
+                        }
                     }
                 }
                 // println!("PC: {:<5}; Token: \"{}\"; Data: \"{}\"", self.pc, token_type.name, data);
@@ -192,6 +332,8 @@ impl Machine {
         match token.exec(
             &self.token_types,
             &mut self.stack,
+            &mut self.return_stack,
+            &mut self.variables,
             &mut self.marks,
             &mut self.pc,
         ) {

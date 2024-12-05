@@ -1,6 +1,6 @@
 ("Stack size: ") . len . nl
 
 ("start") mark
-  len (0) = if quit end
+  len (0) = if quit endif
   . nl
 ("start") jmp

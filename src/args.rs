@@ -1,9 +1,9 @@
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version, about)]
 pub struct Args {
-    #[arg(short, long, default_value = "./main.seal")]
+    #[arg(short, long, default_value = "NONE")]
     pub file: String,
 
     #[arg(short, long, default_value = "false")]
