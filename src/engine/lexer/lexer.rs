@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use log::{info, debug};
+use log::{debug, info};
 use regex::Regex;
 
 use super::super::data::Data;

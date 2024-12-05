@@ -1,13 +1,14 @@
 use anyhow::Result;
 use colored::Colorize;
-use log::{info, debug};
+use log::{debug, info};
 
 use super::data::Data;
 use super::file::File;
 use super::lexer::{
     lexer::lex,
-    token::{Token, TokenType, TokenKind},
+    token::{Token, TokenKind, TokenType},
 };
+use super::mark::*;
 use super::stack::*;
 use crate::args::Args;
 
@@ -17,6 +18,7 @@ pub struct Machine {
     token_types: Vec<TokenType>,
     main_file: Option<File>,
     tokens: Vec<Token>,
+    marks: MarkList,
     pc: usize,
 }
 
@@ -28,6 +30,7 @@ impl Machine {
             token_types: Vec::new(),
             main_file: None,
             tokens: Vec::new(),
+            marks: MarkList::new(),
             pc: 0,
         }
     }
@@ -120,15 +123,21 @@ impl Machine {
         let token = &self.tokens[self.pc];
 
         debug!("Interpreting token: {:?}", token);
-        match token.exec(&self.token_types, &mut self.stack, &mut self.pc) {
+        match token.exec(
+            &self.token_types,
+            &mut self.stack,
+            &mut self.marks,
+            &mut self.pc,
+        ) {
             Ok(_) => {}
             Err(e) => {
                 return Err(anyhow::anyhow!(
-                    "Error interpreting token at {}:{}:{}: {}",
+                    "Error interpreting token at {}:{}:{}: {}:\n{}",
                     token.file.to_string().blue().bold(),
                     token.line.to_string().bright_black().bold(),
                     token.col.to_string().bright_black().bold(),
-                    e.to_string().red().bold()
+                    e.to_string().red().bold(),
+                    token.vis
                 ));
             }
         };

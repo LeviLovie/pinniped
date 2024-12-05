@@ -26,8 +26,12 @@ impl MarkList {
         Self { marks: Vec::new() }
     }
 
-    pub fn push(&mut self, mark: Mark) {
+    pub fn push_mark(&mut self, mark: Mark) {
         self.marks.push(mark);
+    }
+
+    pub fn push(&mut self, name: String, pc: usize) {
+        self.marks.push(Mark::new(name, pc));
     }
 
     pub fn pop(&mut self) -> Option<Mark> {
@@ -60,7 +64,7 @@ mod tests {
     #[test]
     fn test_mark_list() {
         let mut mark_list = MarkList::new();
-        mark_list.push(Mark::new("test".to_string(), 0));
+        mark_list.push("test".to_string(), 0);
         assert_eq!(mark_list.exists("test"), true);
         assert_eq!(mark_list.get_pc("test"), Some(0));
         assert_eq!(mark_list.get_pc("test2"), None);
