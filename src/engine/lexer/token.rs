@@ -7,6 +7,7 @@ type TokenFunc =
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
+    Import,
     Function,
     Push,
     Proc,

@@ -40,22 +40,6 @@ fn main() {
         }
     };
 
-    match machine.after_lex() {
-        Ok(_) => {}
-        Err(e) => {
-            error!("Error after lexing: {}", e);
-            std::process::exit(1);
-        }
-    };
-
-    match machine.after_lex() {
-        Ok(_) => {}
-        Err(e) => {
-            error!("Error after lexing: {}", e);
-            std::process::exit(1);
-        }
-    };
-
     match machine.interpret() {
         Ok(_) => {}
         Err(e) => {

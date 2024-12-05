@@ -8,6 +8,15 @@ use super::engine::variables::Variables;
 
 pub fn tokens() -> Vec<TokenType> {
     vec![
+        // Imports a file from import(CAPTURE)
+        TokenType::reg(
+            TokenKind::Import,
+            "import",
+            "^import\\(\"?(.+)\"?\\)",
+            |_, _, _, _, _, _| -> Result<()> {
+                Ok(())
+            },
+        ),
         // Push a value to the stack
         TokenType::reg(
             TokenKind::Push,
@@ -118,7 +127,7 @@ pub fn tokens() -> Vec<TokenType> {
         TokenType::reg(
             TokenKind::Function,
             ".",
-            "\\.",
+            "^\\.$",
             |stack: &mut Stack, _, _, _, _, _| -> Result<()> {
                 print!("{}", stack.pop()?);
                 Ok(())
