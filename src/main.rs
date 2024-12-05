@@ -16,7 +16,6 @@ fn main() {
     info!("Machine created");
 
     machine.register_tokens(tokens());
-    info!("Tokens registered");
 
     match machine.preprocess() {
         Ok(_) => {}
@@ -25,9 +24,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    info!("Preprocessing finished");
 
-    info!("Starting lexing");
     match machine.lex() {
         Ok(_) => {}
         Err(e) => {
@@ -35,9 +32,23 @@ fn main() {
             std::process::exit(1);
         }
     };
-    info!("Lexing finished");
 
-    info!("Starting interpretation");
+    match machine.after_lex() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Error after lexing: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    match machine.after_lex() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Error after lexing: {}", e);
+            std::process::exit(1);
+        }
+    };
+
     match machine.interpret() {
         Ok(_) => {}
         Err(e) => {
@@ -45,5 +56,4 @@ fn main() {
             std::process::exit(1);
         }
     };
-    info!("Interpretation finished");
 }

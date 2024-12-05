@@ -24,6 +24,10 @@ impl Stack {
         Stack { stack: Vec::new() }
     }
 
+    pub fn elements(&self) -> &Vec<Data> {
+        &self.stack
+    }
+
     pub fn push(&mut self, element: Data) {
         self.stack.push(element);
     }
@@ -62,7 +66,7 @@ impl Stack {
 }
 
 #[cfg(test)]
-mod stack {
+mod tests {
     #[test]
     fn test_push() {
         let mut stack = super::Stack::new();

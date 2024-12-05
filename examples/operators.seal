@@ -1,0 +1,6 @@
+(true) : . (" ") . ! . nl
+(false) : . (" ") . ! . nl
+(2) (2) = if ("2 is equals to 2") . nl end
+(2) (1) = ! if ("2 is not equals to 1") . nl end
+(2) (1) < if ("1 is less than 2") . nl end
+(1) (2) > if ("3 is greater than 2") . nl end

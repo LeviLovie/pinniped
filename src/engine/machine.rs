@@ -1,13 +1,14 @@
 use anyhow::Result;
 use colored::Colorize;
-use log::info;
+use log::{debug, info};
 
 use super::data::Data;
 use super::file::File;
 use super::lexer::{
     lexer::lex,
-    token::{Token, TokenType},
+    token::{Token, TokenKind, TokenType},
 };
+use super::mark::*;
 use super::stack::*;
 use crate::args::Args;
 
@@ -17,6 +18,7 @@ pub struct Machine {
     token_types: Vec<TokenType>,
     main_file: Option<File>,
     tokens: Vec<Token>,
+    marks: MarkList,
     pc: usize,
 }
 
@@ -28,12 +30,14 @@ impl Machine {
             token_types: Vec::new(),
             main_file: None,
             tokens: Vec::new(),
+            marks: MarkList::new(),
             pc: 0,
         }
     }
 
     pub fn register_tokens(&mut self, tokens: Vec<TokenType>) {
         self.token_types.extend(tokens);
+        info!("Tokens registered");
     }
 
     pub fn preprocess(&mut self) -> Result<()> {
@@ -48,6 +52,7 @@ impl Machine {
         main_file.read()?;
         self.main_file = Some(main_file);
 
+        info!("Main file loaded");
         Ok(())
     }
 
@@ -61,17 +66,119 @@ impl Machine {
         )?;
         self.tokens.append(&mut tokens);
 
+        info!("Main file lexed");
+        Ok(())
+    }
+
+    pub fn after_lex(&mut self) -> Result<()> {
+        info!("Starting after-lexing");
+
+        let tokens = self.tokens.clone();
+        for (i, token) in &mut self.tokens.iter_mut().enumerate() {
+            let token_type = token.get_type(self.token_types.clone())?.type_;
+            if token_type == TokenKind::Statement && token.data != Data::from_str("end") {
+                debug!("Token: {:?}", token);
+                // Go through all the tokens and find the matching end token
+                let mut end_token = None;
+                let mut depth = 0;
+                let tokens = tokens.clone()[i..].to_vec();
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
+                        if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
+                            if depth == 0 {
+                                end_token = Some(i);
+                                break;
+                            } else {
+                                depth -= 1;
+                            }
+                        } else if token_type.type_ == TokenKind::Statement
+                            && token_type.name != "end"
+                        {
+                            depth += 1;
+                        }
+                    }
+                }
+                if end_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching end token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
+                }
+                token.data = Data::from_int(end_token.unwrap() as i32);
+            }
+        }
+
+        info!("After-lexing complete");
         Ok(())
     }
 
     pub fn interpret(&mut self) -> Result<()> {
         info!("Interpreting tokens");
 
+        if self.args.debug_inter {
+            println!("Press enter to go to the next token");
+        }
+
         while self.pc < self.tokens.len() {
+            if self.args.debug_inter {
+                let token = &self.tokens[self.pc];
+                let token_type = token.get_type(self.token_types.clone())?;
+                let data = token.data.to_string();
+                let quote = "\"".bright_black();
+                let colon = ":".bright_black();
+                let coma = ",".bright_black();
+                println!(
+                    "\n{}{} {}{}{}",
+                    "Line".blue().bold(),
+                    colon,
+                    quote,
+                    token.vis,
+                    quote
+                );
+                print!("{}{} ", "Stack".blue().bold(), colon);
+                if self.stack.len() == 0 {
+                    println!("{}", "<empty>".bright_black());
+                }
+                for (i, element) in self.stack.elements().iter().enumerate() {
+                    if i % 5 == 0 && i != 0 {
+                        print!("       ");
+                    }
+                    print!("{}{}{}", quote, element.to_string(), quote);
+                    if i % 5 == 4 || i == self.stack.len() - 1 {
+                        println!();
+                    } else {
+                        print!(", ");
+                    }
+                }
+                // println!("PC: {:<5}; Token: \"{}\"; Data: \"{}\"", self.pc, token_type.name, data);
+                print!("{}{} {}{} ", "PC".blue().bold(), colon, self.pc, coma);
+                print!(
+                    "{}{} {}{}{}{} ",
+                    "Token".blue().bold(),
+                    colon,
+                    quote,
+                    token_type.name,
+                    quote,
+                    coma
+                );
+                println!(
+                    "{}{} {}{}{}",
+                    "Data".blue().bold(),
+                    colon,
+                    quote,
+                    data,
+                    quote
+                );
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input)?;
+            }
             self.interpret_step()?;
             self.pc += 1;
         }
 
+        info!("Interpretation complete");
         Ok(())
     }
 
@@ -81,16 +188,22 @@ impl Machine {
         }
         let token = &self.tokens[self.pc];
 
-        info!("Interpreting token: {:?}", token);
-        match token.exec(&self.token_types, &mut self.stack, &mut self.pc) {
+        debug!("Interpreting token: {:?}", token);
+        match token.exec(
+            &self.token_types,
+            &mut self.stack,
+            &mut self.marks,
+            &mut self.pc,
+        ) {
             Ok(_) => {}
             Err(e) => {
                 return Err(anyhow::anyhow!(
-                    "Error interpreting token at {}:{}:{}: {}",
+                    "Error interpreting token at {}:{}:{}: {}: \"{}\"",
                     token.file.to_string().blue().bold(),
                     token.line.to_string().bright_black().bold(),
                     token.col.to_string().bright_black().bold(),
-                    e.to_string().red().bold()
+                    e.to_string().red().bold(),
+                    token.get_type(self.token_types.clone())?.name
                 ));
             }
         };

@@ -1,5 +1,5 @@
-use anyhow::{Context, Result};
-use log::info;
+use anyhow::Result;
+use log::{debug, info};
 use regex::Regex;
 
 use super::super::data::Data;
@@ -71,13 +71,13 @@ impl Lexer {
             return Ok(());
         }
         self.contents = self.contents[remove_symbols..].to_string();
-        info!("Word: `{}`", word);
+        debug!("Word: `{}`", word);
         let mut found = false;
 
         for (i, token) in self.token_types.iter().enumerate() {
             let re = Regex::new(&token.regex).unwrap();
             if re.is_match(&word) {
-                info!("Found token: {:?}", token);
+                debug!("Found token: {:?}", token);
                 let mut data = Data::None;
                 if token.type_ == TokenKind::Push {
                     let caps = re.captures(&word).unwrap();
@@ -103,13 +103,10 @@ impl Lexer {
 
         if !found {
             return Err(anyhow::anyhow!(
-                "No token found at line {}, col {}",
+                "No token found at line {}, col {}: \"{}\"",
                 self.line,
-                self.col
-            ))
-            .context(format!(
-                "No token found at line {}, col {}",
-                self.line, self.col
+                self.col,
+                word
             ));
         }
 
@@ -127,7 +124,7 @@ pub fn lex(contents: &str, token_types: Vec<TokenType>, file: String) -> Result<
 
     info!("Lexer finished");
     for token in &lexer.tokens {
-        info!("{:?}", token);
+        debug!("{:?}", token);
     }
 
     Ok(lexer.tokens)
