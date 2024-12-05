@@ -76,27 +76,28 @@ impl Machine {
         let tokens = self.tokens.clone();
         for (i, token) in &mut self.tokens.iter_mut().enumerate() {
             let token_type = token.get_type(self.token_types.clone())?.type_;
-            if token_type == TokenKind::Statement && token.data != Data::from_str("end") {
-                debug!("Token: {:?}", token);
+            debug!("Token: {:?}", token);
+            if token_type == TokenKind::If {
                 // Go through all the tokens and find the matching end token
                 let mut end_token = None;
                 let mut depth = 0;
-                let tokens = tokens.clone()[i..].to_vec();
+                let tokens = tokens.clone()[i + 1..].to_vec();
                 for (i, t) in tokens.iter().enumerate() {
                     let token_type = t.get_type(self.token_types.clone())?;
-                    if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
-                        if token_type.type_ == TokenKind::Statement && token_type.name == "end" {
-                            if depth == 0 {
-                                end_token = Some(i);
-                                break;
-                            } else {
-                                depth -= 1;
-                            }
-                        } else if token_type.type_ == TokenKind::Statement
-                            && token_type.name != "end"
-                        {
-                            depth += 1;
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
+                    if token_type.type_ == TokenKind::EndIf {
+                        if depth == 0 {
+                            end_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
                         }
+                    } else if token_type.type_ == TokenKind::If {
+                        depth += 1;
                     }
                 }
                 if end_token.is_none() {
@@ -107,6 +108,66 @@ impl Machine {
                     ));
                 }
                 token.data = Data::from_int(end_token.unwrap() as i32);
+            } else if token_type == TokenKind::Do {
+                // Go through all the tokens and find the matching end token
+                let mut end_token = None;
+                let mut depth = 0;
+                let tokens = tokens.clone()[i + 1..].to_vec();
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    debug!(
+                        "Subtoken: {:?}, type: {:?}",
+                        t,
+                        t.get_type(self.token_types.clone())
+                    );
+                    if token_type.type_ == TokenKind::End {
+                        if depth == 0 {
+                            end_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
+                        }
+                    } else if token_type.type_ == TokenKind::While {
+                        depth += 1;
+                    }
+                }
+                if end_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching end token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
+                }
+                token.data = Data::from_int(end_token.unwrap() as i32);
+            } else if token_type == TokenKind::End {
+                // Go back through ass the tokens and find a while token
+                let mut while_token = None;
+                let mut depth = 0;
+                let mut tokens = tokens.clone()[..i].to_vec();
+                tokens.reverse();
+                for (i, t) in tokens.iter().enumerate() {
+                    let token_type = t.get_type(self.token_types.clone())?;
+                    let token_kind = token_type.type_.clone();
+                    debug!("Subtoken: {:?}, type: {:?}", "", token_type.type_);
+                    if token_type.type_ == TokenKind::While {
+                        if depth == 0 {
+                            while_token = Some(i);
+                            break;
+                        } else {
+                            depth -= 1;
+                        }
+                    } else if token_kind == TokenKind::End {
+                        depth += 1;
+                    }
+                }
+                if while_token.is_none() {
+                    return Err(anyhow::anyhow!(
+                        "No matching end token found for token at {}:{}",
+                        token.line,
+                        token.col
+                    ));
+                }
+                token.data = Data::from_int(while_token.unwrap() as i32)
             }
         }
 

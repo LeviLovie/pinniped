@@ -239,9 +239,9 @@ pub fn tokens() -> Vec<TokenType> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 let c = stack.pop()?;
-                stack.push(b);
                 stack.push(a);
                 stack.push(c);
+                stack.push(b);
                 Ok(())
             },
         ),
@@ -254,9 +254,9 @@ pub fn tokens() -> Vec<TokenType> {
                 let a = stack.pop()?;
                 let b = stack.pop()?;
                 let c = stack.pop()?;
+                stack.push(b);
                 stack.push(a);
                 stack.push(c);
-                stack.push(b);
                 Ok(())
             },
         ),
@@ -302,25 +302,6 @@ pub fn tokens() -> Vec<TokenType> {
             "quit",
             |_, _, _, _| -> Result<()> {
                 std::process::exit(0);
-            },
-        ),
-        // If removes one element from the stack, if that is 0, it skips to the end token
-        TokenType::reg(
-            TokenKind::Statement,
-            "if",
-            "if",
-            |stack: &mut Stack, _, pc: &mut usize, data: Data| -> Result<()> {
-                let last_element = stack.pop()?;
-                if last_element.is_false() {
-                    if !data.is_number() {
-                        stack.push(last_element);
-                        return Err(anyhow::anyhow!(
-                            "If statement requires a number as the offset. Were tokens linked?"
-                        ));
-                    }
-                    *pc += data.as_int()? as usize - 1;
-                }
-                Ok(())
             },
         ),
         // Pushes true if last two elements are equal
@@ -402,13 +383,6 @@ pub fn tokens() -> Vec<TokenType> {
                 Ok(())
             },
         ),
-        // End token for if
-        TokenType::reg(
-            TokenKind::Statement,
-            "end",
-            "end",
-            |_, _, _, _| -> Result<()> { Ok(()) },
-        ),
         // Push current pc to the stack
         TokenType::reg(
             TokenKind::Function,
@@ -468,6 +442,73 @@ pub fn tokens() -> Vec<TokenType> {
             "len",
             |stack: &mut Stack, _, _, _| -> Result<()> {
                 stack.push(Data::from_int(stack.len() as i32));
+                Ok(())
+            },
+        ),
+        // If removes one element from the stack, if that is 0, it skips to the end token
+        TokenType::reg(
+            TokenKind::If,
+            "if",
+            "^if",
+            |stack: &mut Stack, _, pc: &mut usize, data: Data| -> Result<()> {
+                let last_element = stack.pop()?;
+                if last_element.is_false() {
+                    if !data.is_number() {
+                        stack.push(last_element);
+                        return Err(anyhow::anyhow!(
+                            "If statement requires a number as the offset. Were tokens linked?"
+                        ));
+                    }
+                    *pc += data.as_int()? as usize - 1;
+                }
+                Ok(())
+            },
+        ),
+        // End token for if
+        TokenType::reg(
+            TokenKind::EndIf,
+            "endif",
+            "endif",
+            |_, _, _, _| -> Result<()> { Ok(()) },
+        ),
+        // While token
+        TokenType::reg(
+            TokenKind::While,
+            "while",
+            "while",
+            |_, _, _, _| -> Result<()> { Ok(()) },
+        ),
+        // Works just as if
+        TokenType::reg(
+            TokenKind::Do,
+            "do",
+            "do",
+            |stack: &mut Stack, _, pc: &mut usize, data: Data| -> Result<()> {
+                let last_element = stack.pop()?;
+                if last_element.is_false() {
+                    if !data.is_number() {
+                        stack.push(last_element);
+                        return Err(anyhow::anyhow!(
+                            "If statement requires a number as the offset. Were tokens linked?"
+                        ));
+                    }
+                    *pc += data.as_int()? as usize + 1;
+                }
+                Ok(())
+            },
+        ),
+        // End for while returns to the while token in data
+        TokenType::reg(
+            TokenKind::End,
+            "end",
+            "end",
+            |_, _, pc: &mut usize, data: Data| -> Result<()> {
+                if !data.is_number() {
+                    return Err(anyhow::anyhow!(
+                        "Endwhile statement requires a number as the offset. Were tokens linked?"
+                    ));
+                }
+                *pc -= data.as_int()? as usize + 1;
                 Ok(())
             },
         ),
