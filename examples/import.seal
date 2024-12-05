@@ -1,0 +1,4 @@
+import("imported.seal")
+
+("Hello, world!") {print}
+
