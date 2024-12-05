@@ -2,8 +2,8 @@ use anyhow::Result;
 
 use super::engine::data::Data;
 use super::engine::lexer::token::{TokenKind, TokenType};
-use super::engine::stack::Stack;
 use super::engine::mark::MarkList;
+use super::engine::stack::Stack;
 
 pub fn tokens() -> Vec<TokenType> {
     vec![
@@ -28,10 +28,15 @@ pub fn tokens() -> Vec<TokenType> {
             },
         ),
         // Print \n
-        TokenType::reg(TokenKind::Function, "nl", "nl", |_, _, _, _| -> Result<()> {
-            println!();
-            Ok(())
-        }),
+        TokenType::reg(
+            TokenKind::Function,
+            "nl",
+            "nl",
+            |_, _, _, _| -> Result<()> {
+                println!();
+                Ok(())
+            },
+        ),
         // Add the top two values from the stack
         TokenType::reg(
             TokenKind::Function,
@@ -269,7 +274,9 @@ pub fn tokens() -> Vec<TokenType> {
                 if last_element.is_false() {
                     if !data.is_number() {
                         stack.push(last_element);
-                        return Err(anyhow::anyhow!("If statement requires a number as the offset. Were tokens linked?"));
+                        return Err(anyhow::anyhow!(
+                            "If statement requires a number as the offset. Were tokens linked?"
+                        ));
                     }
                     *pc += data.as_int()? as usize - 1;
                 }
@@ -281,9 +288,7 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Statement,
             "end",
             "end",
-            |_, _, _, _| -> Result<()> {
-                Ok(())
-            },
+            |_, _, _, _| -> Result<()> { Ok(()) },
         ),
         // Push current pc to the stack
         TokenType::reg(

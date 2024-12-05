@@ -1,4 +1,4 @@
-use super::super::{data::Data, stack::Stack, mark::MarkList};
+use super::super::{data::Data, mark::MarkList, stack::Stack};
 
 use anyhow::Result;
 
@@ -67,7 +67,13 @@ impl Token {
         Ok(token_types[self.type_].clone())
     }
 
-    pub fn exec(&self, types: &Vec<TokenType>, stack: &mut Stack, marks: &mut MarkList, pc: &mut usize) -> Result<()> {
+    pub fn exec(
+        &self,
+        types: &Vec<TokenType>,
+        stack: &mut Stack,
+        marks: &mut MarkList,
+        pc: &mut usize,
+    ) -> Result<()> {
         if self.type_ >= types.len() {
             return Err(anyhow::anyhow!("Token type out of bounds: {}", self.type_));
         }

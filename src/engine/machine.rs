@@ -1,15 +1,15 @@
 use anyhow::Result;
 use colored::Colorize;
-use log::{info, debug};
+use log::{debug, info};
 
 use super::data::Data;
 use super::file::File;
 use super::lexer::{
     lexer::lex,
-    token::{Token, TokenType, TokenKind},
+    token::{Token, TokenKind, TokenType},
 };
-use super::stack::*;
 use super::mark::*;
+use super::stack::*;
 use crate::args::Args;
 
 pub struct Machine {
@@ -123,7 +123,12 @@ impl Machine {
         let token = &self.tokens[self.pc];
 
         debug!("Interpreting token: {:?}", token);
-        match token.exec(&self.token_types, &mut self.stack, &mut self.marks, &mut self.pc) {
+        match token.exec(
+            &self.token_types,
+            &mut self.stack,
+            &mut self.marks,
+            &mut self.pc,
+        ) {
             Ok(_) => {}
             Err(e) => {
                 return Err(anyhow::anyhow!(
