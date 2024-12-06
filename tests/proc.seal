@@ -1,0 +1,10 @@
+(42) (10)
+
+(iter) proc
+  (42)
+ret
+
+(0) while : (10) > do
+  {iter} swp (1) +
+end .
+

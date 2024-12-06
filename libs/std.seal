@@ -1,9 +1,17 @@
-(print) proc
+(out) proc
   len (0) < if
-    . nl
+    .
   endif
 ret
 
-(debug) proc
-  : {print}
+(outln) proc
+  {out} nl
+ret
+
+(print) proc
+  : {out}
+ret
+
+(println) proc
+  : {outnl}
 ret

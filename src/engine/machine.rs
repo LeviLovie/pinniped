@@ -42,6 +42,10 @@ impl Machine {
         }
     }
 
+    pub fn stack(&self) -> &Stack {
+        &self.stack
+    }
+
     pub fn register_tokens(&mut self, tokens: Vec<TokenType>) {
         self.token_types.extend(tokens);
         info!("Tokens registered");

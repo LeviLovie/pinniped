@@ -35,7 +35,7 @@ impl Data {
             return Data::Bool(s.parse::<bool>().unwrap());
         }
 
-        if s == "None" {
+        if s == "None" || s == "none" || s == "" {
             return Data::None;
         }
 

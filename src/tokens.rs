@@ -13,15 +13,13 @@ pub fn tokens() -> Vec<TokenType> {
             TokenKind::Import,
             "import",
             "^import\\(\"?(.+)\"?\\)",
-            |_, _, _, _, _, _| -> Result<()> {
-                Ok(())
-            },
+            |_, _, _, _, _, _| -> Result<()> { Ok(()) },
         ),
         // Push a value to the stack
         TokenType::reg(
             TokenKind::Push,
             "push",
-            "^\\((.+)\\)", // Captures anything exept whitespace inside ()
+            "^\\((.{0,})\\)", // Captures anything exept whitespace inside ()
             |stack: &mut Stack, _, _, _, _, add_value| -> Result<()> {
                 stack.push(add_value);
                 Ok(())

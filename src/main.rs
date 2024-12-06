@@ -1,6 +1,8 @@
 pub mod args;
 pub mod engine;
 pub mod included_libs;
+#[cfg(test)]
+mod test;
 pub mod tokens;
 
 use log::{error, info};
